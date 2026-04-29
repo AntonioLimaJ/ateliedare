@@ -1,107 +1,117 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, X, Share } from "lucide-react";
+import { Download, X, Share, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function InstallPWA() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstall, setCanInstall] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // 1. Register Service Worker
+    // 1. Registro do SW
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").then(
-          (registration) => console.log("SW registered"),
-          (err) => console.log("SW registration failed: ", err)
-        );
-      });
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
 
-    // 2. Detect iOS
+    // 2. Detecção de iOS
     const isIPad = navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1;
     const isIPhone = /iPhone|iPod/.test(navigator.userAgent);
-    if (isIPhone || isIPad) {
-      setIsIOS(true);
-      // Show iOS prompt if not in standalone mode
-      if (!window.matchMedia("(display-mode: standalone)").matches) {
-        setIsVisible(true);
-      }
-    }
+    if (isIPhone || isIPad) setIsIOS(true);
 
-    // 3. Listen for install prompt (Android/Chrome/Edge)
+    // 3. Captura do Evento de Instalação
     const handler = (e: any) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
-      setDeferredPrompt(e);
-      // Show our custom button
+      (window as any).deferredPrompt = e;
+      setCanInstall(true);
       setIsVisible(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
 
-    // 3. Detect if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsVisible(false);
+    // Mostrar card se for mobile e não estiver instalado
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    
+    if (isMobile && !isStandalone) {
+      setIsVisible(true);
     }
 
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+  const handleInstallClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const promptEvent = (window as any).deferredPrompt;
     
-    // Show the install prompt
-    deferredPrompt.prompt();
+    if (!promptEvent) {
+      // Se o evento não disparou (comum em HTTP/IP local), avisamos o usuário
+      alert("Para instalar via botão, o navegador exige uma conexão segura (HTTPS). \n\nComo você está acessando via IP, use a opção 'Instalar Aplicativo' no menu de 3 pontos do Chrome.");
+      return;
+    }
+
+    // Dispara o prompt
+    promptEvent.prompt();
     
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    
-    // We've used the prompt, and can't use it again
-    setDeferredPrompt(null);
-    setIsVisible(false);
+    const { outcome } = await promptEvent.userChoice;
+    if (outcome === "accepted") {
+      (window as any).deferredPrompt = null;
+      setIsVisible(false);
+    }
   };
 
-  if (!isVisible) return null;
-
   return (
-    <div className="fixed top-20 left-4 right-4 z-[200] animate-in fade-in slide-in-from-top-4 duration-500">
-      <div className="bg-[#c084fc] rounded-2xl p-4 shadow-2xl flex items-center justify-between border border-white/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner">
-            <Download className="text-[#c084fc]" size={20} />
-          </div>
-          <div>
-            <p className="text-white font-bold text-sm">Instalar Aplicativo</p>
-            <p className="text-white/80 text-[10px]">Acesse mais rápido da sua tela inicial</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {isIOS ? (
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-xl">
-              <Share size={14} className="text-white" />
-              <span className="text-white text-[10px] font-bold">"Add à Tela de Início"</span>
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-24 left-4 right-4 z-[9999] flex justify-center select-none"
+        >
+          <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[28px] p-4 shadow-2xl flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <Download className="text-white" size={24} />
             </div>
-          ) : (
-            <button
-              onClick={handleInstallClick}
-              className="bg-white text-[#c084fc] px-4 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95 transition-transform"
-            >
-              Instalar
-            </button>
-          )}
-          <button
-            onClick={() => setIsVisible(false)}
-            className="p-2 text-white/60 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </div>
-    </div>
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-white font-bold text-sm">App Apreço</span>
+                <Sparkles className="text-yellow-400" size={12} />
+              </div>
+              <p className="text-zinc-500 text-[10px]">Instale agora no seu celular</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isIOS ? (
+                <div className="bg-white/5 px-3 py-2 rounded-xl flex items-center gap-2 border border-white/5">
+                  <Share size={14} className="text-purple-400" />
+                  <span className="text-white text-[10px] font-bold">Compartilhar</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleInstallClick}
+                  className="bg-white text-black px-5 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition-all"
+                >
+                  Instalar
+                </button>
+              )}
+              
+              <button
+                type="button"
+                onClick={() => setIsVisible(false)}
+                className="p-2 text-zinc-600 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

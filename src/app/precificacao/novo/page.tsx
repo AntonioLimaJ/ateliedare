@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
@@ -24,7 +24,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "../_components/CustosTab";
 
-export default function NovoProduto() {
+// Separate the content to use Suspense
+function NovoProdutoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
@@ -590,5 +591,17 @@ export default function NovoProduto() {
         />
       )}
     </div>
+  );
+}
+
+export default function NovoProduto() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <NovoProdutoContent />
+    </Suspense>
   );
 }

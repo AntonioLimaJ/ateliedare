@@ -12,7 +12,7 @@ export function InstallPWA() {
   useEffect(() => {
     // 1. Registro do SW
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/sw.js").catch(() => { });
     }
 
     // 2. Detecção de iOS
@@ -33,7 +33,7 @@ export function InstallPWA() {
     // Mostrar card se for mobile e não estiver instalado
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    
+
     if (isMobile && !isStandalone) {
       setIsVisible(true);
     }
@@ -46,16 +46,10 @@ export function InstallPWA() {
     e.stopPropagation();
 
     const promptEvent = (window as any).deferredPrompt;
-    
-    if (!promptEvent) {
-      // Se o evento não disparou (comum em HTTP/IP local), avisamos o usuário
-      alert("Para instalar via botão, o navegador exige uma conexão segura (HTTPS). \n\nComo você está acessando via IP, use a opção 'Instalar Aplicativo' no menu de 3 pontos do Chrome.");
-      return;
-    }
 
     // Dispara o prompt
     promptEvent.prompt();
-    
+
     const { outcome } = await promptEvent.userChoice;
     if (outcome === "accepted") {
       (window as any).deferredPrompt = null;
@@ -66,7 +60,7 @@ export function InstallPWA() {
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
@@ -76,7 +70,7 @@ export function InstallPWA() {
             <div className="w-12 h-12 bg-gradient-to-tr from-[#E5989B] to-[#D4A5A5] rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Download className="text-white" size={24} />
             </div>
-            
+
             <div className="flex-1">
               <div className="flex items-center gap-1">
                 <span className="text-[#2D2D2D] font-bold text-sm">App Apreço</span>
@@ -100,7 +94,7 @@ export function InstallPWA() {
                   Instalar
                 </button>
               )}
-              
+
               <button
                 type="button"
                 onClick={() => setIsVisible(false)}

@@ -9,7 +9,6 @@ import { CustosTab, useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } f
 import { MaterialFormModal, Material } from "./_components/MaterialManager";
 import { supabase } from "@/lib/supabase";
 
-
 interface Produto {
   id: string;
   nome: string;
@@ -18,7 +17,6 @@ interface Produto {
   imagem_url?: string;
   favorito: boolean;
   created_at: string;
-  // raw fields for recalculation
   custo_materiais?: number;
   custo_trabalho?: number;
   tempo_trabalho?: number;
@@ -34,6 +32,8 @@ export default function PrecificacaoDashboard() {
   const [showMaterialForm, setShowMaterialForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const { config } = useConfiguracoes();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => { fetchProdutos(); }, []);
   useEffect(() => {
@@ -41,7 +41,6 @@ export default function PrecificacaoDashboard() {
     else if (activeTab === "produtos") fetchProdutos();
   }, [activeTab]);
 
-  // Realtime subscriptions
   useEffect(() => {
     const produtosChannel = supabase
       .channel("produtos-realtime")
@@ -64,7 +63,7 @@ export default function PrecificacaoDashboard() {
         } else if (payload.eventType === "UPDATE") {
           setMaterials((prev) => prev.map((m) => m.id === (payload.new as Material).id ? payload.new as Material : m));
         } else if (payload.eventType === "DELETE") {
-          setMaterials((prev) => prev.filter((m) => m.id !== (payload.old as any).id));
+          setMaterials((prev) => prev.filter((p) => p.id !== (payload.old as any).id));
         }
       })
       .subscribe();
@@ -93,7 +92,6 @@ export default function PrecificacaoDashboard() {
     } finally { setLoading(false); }
   };
 
-  // Recalculate product price with current global settings
   const calcPrecoAtual = (p: Produto): number => {
     if (!p.tempo_trabalho && !p.custo_materiais) return p.preco_final || 0;
     const custoHora = calcularCustoHora(config);
@@ -106,35 +104,58 @@ export default function PrecificacaoDashboard() {
     return base * (1 + taxPct / 100);
   };
 
-  const totalEstoque = produtos.reduce((acc, p) => acc + calcPrecoAtual(p), 0);
   const tipoLabel = (tipo: string) => ({ "Comprimento": "/m", "Peso (kg)": "/kg", "Volume (l)": "/l", "Área": "/m²" }[tipo] || "/un");
+
+  const produtosFiltrados = produtos.filter(p => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
+  const materiaisFiltrados = materials.filter(m => m.nome.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const totalEstoque = produtosFiltrados.reduce((acc, p) => acc + calcPrecoAtual(p), 0);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] pb-24 font-sans antialiased selection:bg-[#E5989B]/30">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center">
-            <img src="/icon.png" alt="Logo" className="w-full h-full" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-[#2D2D2D] leading-tight">Ateliê da Re</h1>
-            <p className="text-[11px] font-medium text-[#E5989B] uppercase tracking-widest">Bordados Eletrônicos</p>
-          </div>
+      <header className="sticky top-0 z-40 bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg h-20">
+        <div className="flex items-center gap-3 flex-1">
+          {!isSearching ? (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
+              <div className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center overflow-hidden">
+                <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-[#2D2D2D] leading-tight">Ateliê da Re</h1>
+                <p className="text-[11px] font-medium text-[#E5989B] uppercase tracking-widest">Bordados Eletrônicos</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 mr-4 animate-in fade-in slide-in-from-right-4">
+              <div className="relative">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder={`Pesquisar ${activeTab === "produtos" ? "produtos" : "materiais"}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-12 bg-[#FAF7F2] border border-[#F0E6E6] rounded-2xl px-12 text-sm focus:outline-none focus:border-[#E5989B] transition-all"
+                />
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9E9E9E]" />
+              </div>
+            </div>
+          )}
         </div>
-        <button className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center text-[#6D6D6D]">
-          <Search size={20} />
-        </button>
+        
+        {activeTab !== "custos" && (
+          <button 
+            onClick={() => {
+              setIsSearching(!isSearching);
+              if (isSearching) setSearchQuery("");
+            }}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isSearching ? 'bg-[#2D2D2D] text-white' : 'bg-[#F8EDEB] text-[#6D6D6D]'}`}
+          >
+            {isSearching ? <Plus size={20} className="rotate-45" /> : <Search size={20} />}
+          </button>
+        )}
       </header>
 
       <main className="pt-6">
-        {/* Welcome */}
-        <div className="px-6 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-[#2D2D2D]">Olá, Regina! 👋</h2>
-          <p className="text-[#6D6D6D] mt-1">Pronta para precificar?</p>
-        </div>
-
-        {/* Summary Card */}
         <div className="mx-4 mb-6">
           {activeTab === "produtos" ? (
             <div className="p-6 rounded-3xl bg-[#E5989B] text-white shadow-xl shadow-[#E5989B]/20">
@@ -142,86 +163,85 @@ export default function PrecificacaoDashboard() {
               <p className="text-2xl font-bold mt-1 tracking-tight">
                 R$ {totalEstoque.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <p className="text-xs text-white/80 mt-1">{produtos.length} produto{produtos.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-white/80 mt-1">{produtosFiltrados.length} produto{produtosFiltrados.length !== 1 ? "s" : ""}</p>
             </div>
           ) : activeTab === "materiais" ? (
-            <div className="p-6 rounded-3xl bg-white border border-[#F0E6E6] text-[#2D2D2D] shadow-lg">
-              <p className="text-sm font-medium text-[#6D6D6D]">Materiais Cadastrados</p>
-              <p className="text-2xl font-bold mt-1 tracking-tight">{materials.length} {materials.length === 1 ? "item" : "itens"}</p>
+            <div className="p-6 rounded-3xl bg-[#E5989B] text-white shadow-xl shadow-[#E5989B]/20">
+              <p className="text-sm font-medium text-white/90">Materiais Cadastrados</p>
+              <p className="text-2xl font-bold mt-1 tracking-tight">
+                {materiaisFiltrados.length} Itens
+              </p>
+              <p className="text-xs text-white/80 mt-1">Controle de insumos e custos</p>
             </div>
           ) : (
             <div className="p-6 rounded-3xl bg-white border border-[#F0E6E6] text-[#2D2D2D] shadow-lg">
-              <p className="text-sm font-medium text-[#6D6D6D]">Configurações de Custos</p>
-              <p className="text-2xl font-bold mt-1 tracking-tight">
-                R$ {calcularCustoHora(config).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/h
-              </p>
+              <p className="text-sm font-medium text-[#6D6D6D]">Gestão de Custos</p>
+              <p className="text-2xl font-bold mt-1 tracking-tight">Configurações Fixas</p>
+              <p className="text-xs text-[#9E9E9E] mt-1">Defina seus custos e impostos</p>
             </div>
           )}
         </div>
 
-        {/* Tabs */}
         <TopTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* Tab Content */}
-        {activeTab === "custos" ? (
-          <CustosTab />
-        ) : (
-          <div className="px-4 space-y-3 pb-4">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
-              </div>
-            ) : activeTab === "produtos" ? (
-              produtos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-[#9E9E9E]">
-                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mb-4">
-                    <Package size={32} />
+        <div className="px-4">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
+            </div>
+          ) : activeTab === "produtos" ? (
+            <div className="grid grid-cols-1 gap-3">
+              {produtosFiltrados.length === 0 ? (
+                <div className="py-16 text-center text-[#9E9E9E]">
+                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mx-auto mb-4">
+                    {searchQuery ? <Search size={32} /> : <Package size={32} />}
                   </div>
-                  <p className="text-sm font-medium">Nenhum produto cadastrado</p>
-                  <p className="text-xs text-[#9E9E9E] mt-1">Toque no + para criar</p>
+                  <p className="text-sm font-medium">{searchQuery ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}</p>
+                  {!searchQuery && <p className="text-xs text-[#9E9E9E] mt-1">Toque no + para criar</p>}
                 </div>
               ) : (
-                produtos.map((p) => {
-                  const preco = calcPrecoAtual(p);
-                  return (
-                    <Link key={p.id} href={`/precificacao/novo?id=${p.id}`} className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] active:bg-[#F8EDEB] transition-colors block shadow-sm">
-                      <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {p.imagem_url ? (
-                          <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" />
-                        ) : (
-                          <Package size={22} className="text-[#E5989B]" />
-                        )}
+                produtosFiltrados.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/precificacao/detalhes/${p.id}`}
+                    className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] hover:border-[#E5989B]/30 transition-all active:scale-[0.99] shadow-sm relative overflow-hidden"
+                  >
+                    <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                      {p.imagem_url ? (
+                        <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package size={24} className="text-[#E5989B]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-sm font-bold text-[#2D2D2D] truncate">{p.nome}</h3>
+                        {p.favorito && <Star size={12} className="text-amber-400 fill-amber-400 flex-shrink-0" />}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[#2D2D2D] truncate">{p.nome}</p>
-                        {p.descricao && <p className="text-xs text-[#6D6D6D] truncate">{p.descricao}</p>}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {p.favorito && <Star size={14} className="text-yellow-400 fill-yellow-400" />}
-                        <span className="text-sm font-bold text-[#E5989B]">
-                          R$ {preco.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        <Pencil size={14} className="text-[#9E9E9E]" />
-                      </div>
-                    </Link>
-                  );
-                })
-              )
-            ) : (
-              // Materiais tab
-              materials.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-[#9E9E9E]">
-                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mb-4">
-                    <Plus size={32} />
+                      {p.descricao && <p className="text-[11px] text-[#9E9E9E] truncate">{p.descricao}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-[#E5989B]">R$ {calcPrecoAtual(p).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#E5989B] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                ))
+              )}
+            </div>
+          ) : activeTab === "materiais" ? (
+            <div className="grid grid-cols-1 gap-3">
+              {materiaisFiltrados.length === 0 ? (
+                <div className="py-16 text-center text-[#9E9E9E]">
+                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mx-auto mb-4">
+                    {searchQuery ? <Search size={32} /> : <Plus size={32} />}
                   </div>
-                  <p className="text-sm font-medium">Nenhum material cadastrado</p>
+                  <p className="text-sm font-medium">{searchQuery ? "Nenhum material encontrado" : "Nenhum material cadastrado"}</p>
                 </div>
               ) : (
-                materials.map((m) => (
+                materiaisFiltrados.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => setEditingMaterial(m)}
-                    style={{ touchAction: "manipulation" }}
                     className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] text-left active:bg-[#F8EDEB] transition-colors shadow-sm"
                   >
                     <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -237,39 +257,29 @@ export default function PrecificacaoDashboard() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-sm font-bold text-[#E5989B]">
-                        R$ {(m.preco_unitario || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{tipoLabel(m.tipo_medida)}
+                        R$ {(m.preco_unitario || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       <Pencil size={14} className="text-[#9E9E9E]" />
                     </div>
                   </button>
                 ))
-              )
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          ) : (
+            <CustosTab />
+          )}
+        </div>
       </main>
 
-      {/* FAB - hidden on custos tab */}
       {activeTab !== "custos" && (
-        activeTab === "materiais" ? (
-          <button
-            onClick={() => setShowMaterialForm(true)}
-            className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
-            style={{ touchAction: "manipulation" }}
-          >
-            <Plus size={28} />
-          </button>
-        ) : (
-          <Link
-            href="/precificacao/novo"
-            className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
-          >
-            <Plus size={28} />
-          </Link>
-        )
+        <button
+          onClick={() => activeTab === "materiais" ? setShowMaterialForm(true) : window.location.href = "/precificacao/novo"}
+          className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
+        >
+          <Plus size={28} />
+        </button>
       )}
 
-      {/* Material Form Modal (create or edit) */}
       {(showMaterialForm || editingMaterial) && (
         <MaterialFormModal
           material={editingMaterial || undefined}

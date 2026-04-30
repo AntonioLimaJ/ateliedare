@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { icon: Calculator, label: "Precificar", href: "/precificacao" },
-  { icon: DollarSign, label: "Orçamentos", href: "/precificacao/Orcamentos" },
+  { icon: DollarSign, label: "Orçamentos", href: "/precificacao/orcamentos" },
 ];
 
 export function BottomNav() {

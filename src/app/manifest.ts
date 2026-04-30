@@ -10,11 +10,11 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/precificacao',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#ffffffff',
+    background_color: '#ffffff',
     theme_color: '#ffffff',
     icons: [
       {
-        src: '/icon-512.png',
+        src: '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable',

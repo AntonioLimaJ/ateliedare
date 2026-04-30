@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: "Precificação | Ateliê da Re",
-  description: "Ferramenta profissional de precificação para artesanato",
+  description: "Ferramenta profissional de precificação",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

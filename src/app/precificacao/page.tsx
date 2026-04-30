@@ -115,7 +115,7 @@ export default function PrecificacaoDashboard() {
       <header className="sticky top-0 z-40 bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center">
-            <User className="text-[#E5989B]" size={20} />
+            <img src="/icon.png" alt="Logo" className="w-full h-full" />
           </div>
           <div>
             <h1 className="text-sm font-bold text-[#2D2D2D] leading-tight">Ateliê da Re</h1>

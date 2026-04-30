@@ -485,20 +485,6 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
           </div>
         </section>
 
-        {/* Fornecedor Group */}
-        <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
-          <h2 className="text-xl font-bold text-[#9E9E9E]">Fornecedor</h2>
-          <div className="relative opacity-30 pointer-events-none">
-            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center justify-between">
-              <span className="text-[#9E9E9E] font-medium">Clique para escolher</span>
-              <ChevronDown size={20} className="text-[#9E9E9E]" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Lock size={32} className="text-[#9E9E9E]" />
-            </div>
-          </div>
-        </section>
-
         {/* Final Actions */}
         <div className="space-y-3 pt-6">
           <button

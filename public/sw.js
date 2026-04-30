@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apreco-pwa-v2';
+const CACHE_NAME = 'precificare-v2';
 const ASSETS = [
   '/precificacao',
   '/manifest.webmanifest',

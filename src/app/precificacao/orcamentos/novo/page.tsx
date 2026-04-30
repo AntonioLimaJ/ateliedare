@@ -323,7 +323,7 @@ function NovoOrcamentoContent() {
                   <div className="p-4 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg bg-[#FAF7F2] overflow-hidden border border-[#F0E6E6] flex-shrink-0">
                       {item.imagem_url ? (
-                        <img src={item.imagem_url} alt={item.nome} className="w-full h-full object-cover" />
+                        <img src={item.imagem_url} alt={item.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Package size={18} className="text-[#E5989B]/30" />

@@ -87,7 +87,7 @@ export function ProductSelectionModal({ onClose, onSelect }: ProductSelectionMod
               >
                 <div className="w-14 h-14 rounded-xl bg-[#FAF7F2] flex items-center justify-center overflow-hidden border border-[#F0E6E6] group-hover:border-[#E5989B]/20 transition-colors">
                   {p.imagem_url ? (
-                    <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" />
+                    <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
                   ) : (
                     <Package size={24} className="text-[#E5989B]/40" />
                   )}

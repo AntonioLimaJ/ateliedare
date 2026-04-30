@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageUpload } from "./ImageUpload";
 import { supabase } from "@/lib/supabase";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 
 export interface Material {
@@ -102,7 +103,7 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
               >
                 <div className="w-14 h-14 bg-white border border-[#F0E6E6] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                   {m.imagem_url ? (
-                    <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" />
+                    <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
                   ) : (
                     <Lock size={20} className="text-[#F0E6E6]" />
                   )}
@@ -194,7 +195,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
           </div>
           <div>
             <h2 className="text-xl font-bold text-[#2D2D2D]">Quanto de "{material.nome}"?</h2>
-            <p className="text-sm text-[#6D6D6D]">Preço base: R$ {material.preco_unitario?.toFixed(2)} / {material.tipo_medida === "Comprimento" ? "m" : material.tipo_medida === "Peso (kg)" ? "kg" : material.tipo_medida === "Volume (l)" ? "litro" : material.tipo_medida === "Área" ? "m²" : "un"}</p>
+            <p className="text-sm text-[#6D6D6D]">Preço base: R$ {(material.preco_unitario || 0).toFixed(2)} / {material.tipo_medida === "Comprimento" ? "m" : material.tipo_medida === "Peso (kg)" ? "kg" : material.tipo_medida === "Volume (l)" ? "litro" : material.tipo_medida === "Área" ? "m²" : "un"}</p>
           </div>
         </div>
 
@@ -272,6 +273,8 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
   const [imagemNova, setImagemNova] = useState(false);
   const originalImageRef = useRef<string | null>(material?.imagem_url || null);
   const [saving, setSaving] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [dependentItems, setDependentItems] = useState<string[]>([]);
 
   const uploadImage = async (base64: string): Promise<string> => {
     const BUCKET = "precificacao";
@@ -283,10 +286,15 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
     while (n--) u8arr[n] = bstr.charCodeAt(n);
     const blob = new Blob([u8arr], { type: mime });
 
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+    const extension = mime.split("/")[1] || "webp";
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
     const filePath = `uploads/${fileName}`;
 
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, { contentType: mime });
+    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, { 
+      contentType: mime,
+      cacheControl: '3600',
+      upsert: false
+    });
     if (error) throw error;
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
@@ -294,6 +302,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
   };
 
   const handleSave = async () => {
+    if (saving) return;
     if (!nome) return alert("O nome do material é obrigatório.");
 
     try {
@@ -308,7 +317,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
         nome,
         observacoes,
         tipo_medida: tipoMedida,
-        preco_unitario: preco,
+        preco_unitario: preco === "" ? 0 : preco,
         imagem_url: finalImageUrl
       };
 
@@ -347,15 +356,58 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
   };
 
   const onDelete = async () => {
-    if (confirm("Deseja realmente deletar o material?")) {
-      const { error } = await supabase.from("materiais").delete().eq("id", material?.id);
-      if (error) {
-        console.error("Erro ao deletar material:", error.message || error);
+    if (!material?.id) return;
+
+    try {
+      setSaving(true);
+
+      // 1. Verificar se o material está em algum produto e pegar os nomes
+      const { data: deps, error: checkError } = await supabase
+        .from("produto_materiais")
+        .select("nome")
+        .eq("material_id", material.id);
+
+      if (checkError) throw checkError;
+
+      if (deps && deps.length > 0) {
+        setDependentItems(deps.map(d => d.nome));
+        setShowConfirmDelete(true);
         return;
       }
-      onClose();
+
+      setShowConfirmDelete(true);
+    } catch (error: any) {
+      console.error("Erro ao preparar deleção:", error.message || error);
+    } finally {
+      setSaving(false);
     }
-  }
+  };
+
+  const confirmDelete = async () => {
+    if (!material?.id) return;
+    try {
+      setSaving(true);
+      // Deletar o material
+      const { error: deleteError } = await supabase.from("materiais").delete().eq("id", material.id);
+      if (deleteError) throw deleteError;
+
+      // Limpar imagem do storage
+      if (originalImageRef.current) {
+        const BUCKET = "precificacao";
+        const filePath = originalImageRef.current.split(`/${BUCKET}/`)[1];
+        if (filePath) {
+          await supabase.storage.from(BUCKET).remove([filePath]);
+        }
+      }
+
+      onClose();
+    } catch (error: any) {
+      alert(`Erro ao deletar material: ${error.message || "Tente novamente"}`);
+    } finally {
+      setSaving(false);
+      setShowConfirmDelete(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#FAF7F2] flex flex-col overflow-y-auto">
@@ -511,6 +563,22 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             </button>
           )}
         </div>
+
+        <ConfirmationModal
+          isOpen={showConfirmDelete}
+          onClose={() => { setShowConfirmDelete(false); setDependentItems([]); }}
+          onConfirm={() => {
+            confirmDelete();
+          }}
+          title={dependentItems.length > 0 ? "Exclusão Bloqueada" : "Confirmar Exclusão"}
+          message={dependentItems.length > 0 
+            ? "Este material não pode ser removido porque faz parte da composição dos produtos abaixo. Remova-o deles primeiro."
+            : `Tem certeza que deseja excluir o material "${nome}"? Esta ação não pode ser desfeita.`
+          }
+          items={dependentItems}
+          confirmText="Sim, Deletar"
+          isLoading={saving}
+        />
       </main>
 
       {/* Calculator Modal */}

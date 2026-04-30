@@ -28,7 +28,7 @@ export async function processImageProfessional(imageSource: string | File | Blob
       img.src = URL.createObjectURL(processedBlob);
 
       img.onload = () => {
-        const size = 2000; // Aumentado para 2K para máxima nitidez
+        const size = 1080; // Tamanho padrão profissional (1080x1080)
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
@@ -59,7 +59,7 @@ export async function processImageProfessional(imageSource: string | File | Blob
         for (let y = 0; y < img.height; y++) {
           for (let x = 0; x < img.width; x++) {
             const alpha = data[(y * img.width + x) * 4 + 3];
-            if (alpha > 8) { // Sensibilidade aumentada
+            if (alpha > 10) { // Sensibilidade ajustada
               if (x < minX) minX = x;
               if (y < minY) minY = y;
               if (x > maxX) maxX = x;
@@ -81,7 +81,7 @@ export async function processImageProfessional(imageSource: string | File | Blob
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, size, size);
 
-        const margin = size * 0.10; // Margem levemente menor
+        const margin = size * 0.12; // Margem de 12% para respiro profissional
         const maxWidth = size - (margin * 2);
         const maxHeight = size - (margin * 2);
 
@@ -89,17 +89,17 @@ export async function processImageProfessional(imageSource: string | File | Blob
         const drawWidth = cropWidth * ratio;
         const drawHeight = cropHeight * ratio;
 
-        const x = (size - drawWidth) / 2;
-        const y = (size - drawHeight) / 2;
+        const xPos = (size - drawWidth) / 2;
+        const yPos = (size - drawHeight) / 2;
 
         ctx.drawImage(
           img,
           minX, minY, cropWidth, cropHeight,
-          x, y, drawWidth, drawHeight
+          xPos, yPos, drawWidth, drawHeight
         );
 
-        // Qualidade 0.95 para evitar artefatos de compressão
-        const finalBase64 = canvas.toDataURL("image/jpeg", 0.95);
+        // Convertendo para WebP com qualidade 0.8 (equilíbrio perfeito entre peso e qualidade)
+        const finalBase64 = canvas.toDataURL("image/webp", 0.8);
         URL.revokeObjectURL(img.src);
         resolve(finalBase64);
       };

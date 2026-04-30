@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Search, User, Lock, Star, Package, Pencil, Trash } from "lucide-react";
 import { BottomNav } from "./_components/BottomNav";
 import { TopTabs } from "./_components/TopTabs";
@@ -25,6 +26,7 @@ interface Produto {
 }
 
 export default function PrecificacaoDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("produtos");
   const [materials, setMaterials] = useState<Material[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -46,7 +48,11 @@ export default function PrecificacaoDashboard() {
       .channel("produtos-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "produtos" }, (payload) => {
         if (payload.eventType === "INSERT") {
-          setProdutos((prev) => [payload.new as Produto, ...prev]);
+          setProdutos((prev) => {
+            const exists = prev.some(p => p.id === (payload.new as Produto).id);
+            if (exists) return prev;
+            return [payload.new as Produto, ...prev];
+          });
         } else if (payload.eventType === "UPDATE") {
           setProdutos((prev) => prev.map((p) => p.id === (payload.new as Produto).id ? payload.new as Produto : p));
         } else if (payload.eventType === "DELETE") {
@@ -59,7 +65,11 @@ export default function PrecificacaoDashboard() {
       .channel("materiais-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "materiais" }, (payload) => {
         if (payload.eventType === "INSERT") {
-          setMaterials((prev) => [...prev, payload.new as Material].sort((a, b) => a.nome.localeCompare(b.nome)));
+          setMaterials((prev) => {
+            const exists = prev.some(m => m.id === (payload.new as Material).id);
+            if (exists) return prev;
+            return [...prev, payload.new as Material].sort((a, b) => a.nome.localeCompare(b.nome));
+          });
         } else if (payload.eventType === "UPDATE") {
           setMaterials((prev) => prev.map((m) => m.id === (payload.new as Material).id ? payload.new as Material : m));
         } else if (payload.eventType === "DELETE") {
@@ -78,7 +88,13 @@ export default function PrecificacaoDashboard() {
     setLoading(true);
     try {
       const { data } = await supabase.from("materiais").select("*").order("nome");
-      setMaterials(data || []);
+      if (data) {
+        // Garantir que não existam duplicatas vindas do banco ou do estado anterior
+        const unique = data.filter((item, index, self) =>
+          index === self.findIndex((t) => t.id === item.id)
+        );
+        setMaterials(unique);
+      }
     } catch (e) {
     } finally { setLoading(false); }
   };
@@ -87,7 +103,12 @@ export default function PrecificacaoDashboard() {
     setLoading(true);
     try {
       const { data } = await supabase.from("produtos").select("*").order("created_at", { ascending: false });
-      setProdutos(data || []);
+      if (data) {
+        const unique = data.filter((item, index, self) =>
+          index === self.findIndex((t) => t.id === item.id)
+        );
+        setProdutos(unique);
+      }
     } catch (e) {
     } finally { setLoading(false); }
   };
@@ -113,7 +134,7 @@ export default function PrecificacaoDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] pb-24 font-sans antialiased selection:bg-[#E5989B]/30">
-      <header className="sticky top-0 z-40 bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg h-20">
+      <header className="sticky top-0 z-[100] bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg h-20">
         <div className="flex items-center gap-3 flex-1">
           {!isSearching ? (
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
@@ -182,7 +203,9 @@ export default function PrecificacaoDashboard() {
           )}
         </div>
 
-        <TopTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="sticky top-20 z-[90] bg-[#FAF7F2] py-2">
+          <TopTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
 
         <div className="px-4">
           {loading ? (
@@ -208,7 +231,7 @@ export default function PrecificacaoDashboard() {
                   >
                     <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 relative">
                       {p.imagem_url ? (
-                        <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" />
+                        <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
                       ) : (
                         <Package size={24} className="text-[#E5989B]" />
                       )}
@@ -246,7 +269,7 @@ export default function PrecificacaoDashboard() {
                   >
                     <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
                       {m.imagem_url ? (
-                        <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" />
+                        <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
                       ) : (
                         <Lock size={20} className="text-[#E5989B]" />
                       )}
@@ -273,7 +296,7 @@ export default function PrecificacaoDashboard() {
 
       {activeTab !== "custos" && (
         <button
-          onClick={() => activeTab === "materiais" ? setShowMaterialForm(true) : window.location.href = "/precificacao/novo"}
+          onClick={() => activeTab === "materiais" ? setShowMaterialForm(true) : router.push("/precificacao/novo")}
           className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
         >
           <Plus size={28} />

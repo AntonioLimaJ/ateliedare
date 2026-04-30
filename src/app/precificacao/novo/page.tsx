@@ -23,6 +23,7 @@ import { EtiquetaSelectionModal, EtiquetaFormModal } from "../_components/TagMan
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "../_components/CustosTab";
+import { ConfirmationModal } from "../_components/ConfirmationModal";
 
 // Separate the content to use Suspense
 function NovoProdutoContent() {
@@ -54,6 +55,9 @@ function NovoProdutoContent() {
 
   // Save & Price edit
   const [saving, setSaving] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [dependentBudgets, setDependentBudgets] = useState<string[]>([]);
   const [precoPersonalizado, setPrecoPersonalizado] = useState<number | null>(null);
   const [showPriceEdit, setShowPriceEdit] = useState(false);
 
@@ -129,32 +133,79 @@ function NovoProdutoContent() {
   };
 
   const handleCancel = () => {
-    if (confirm("Deseja realmente cancelar? Todas as alterações serão perdidas.")) {
-      router.back();
-    }
+    setShowCancelModal(true);
   };
 
   const handleDelete = async () => {
-    if (confirm("Deseja realmente deletar o produto? Todas as alterações serão perdidas.")) {
-      const { error } = await supabase.from("produtos").delete().eq("id", editId);
-      if (error) {
-        console.error("Error deleting product:", error);
+    if (!editId) return;
+
+    try {
+      setSaving(true);
+
+      // 1. Verificar se o produto está em algum orçamento e buscar os dados do orçamento
+      const { data: deps, error: checkError } = await supabase
+        .from("orcamento_itens")
+        .select(`
+          orcamentos (
+            id,
+            nome_cliente_manual,
+            clientes (nome)
+          )
+        `)
+        .eq("produto_id", editId);
+
+      if (checkError) throw checkError;
+
+      if (deps && deps.length > 0) {
+        // Mapear os nomes dos clientes ou IDs dos orçamentos
+        const budgetNames = deps.map(d => {
+          const orc = d.orcamentos as any;
+          return orc.clientes?.nome || orc.nome_cliente_manual || `Orçamento #${orc.id.slice(0, 8)}`;
+        });
+        // Remover duplicatas
+        setDependentBudgets(Array.from(new Set(budgetNames)));
+        setShowDeleteModal(true);
         return;
       }
-      if (originalImageRef.current && originalImageRef.current !== imagem) {
-        const BUCKET = "precificacao";
-        const filePath = originalImageRef.current.replace(
-          `https://fwpkggjjvifxydigfnhz.supabase.co/storage/v1/object/public/`,
-          ""
-        );
-        const { error: removeError } = await supabase.storage.from(BUCKET).remove([filePath]);
-        if (removeError) {
-          console.error("Error removing image:", removeError);
-        }
-      }
-      router.back();
+
+      setShowDeleteModal(true);
+    } catch (error: any) {
+      console.error("Error preparing delete:", error);
+    } finally {
+      setSaving(false);
     }
   };
+
+  const confirmDelete = async () => {
+    if (!editId) return;
+    try {
+      setSaving(true);
+      
+      // Deletar materiais associados
+      await supabase.from("produto_materiais").delete().eq("produto_id", editId);
+
+      // Deletar o produto
+      const { error: deleteError } = await supabase.from("produtos").delete().eq("id", editId);
+      if (deleteError) throw deleteError;
+
+      // Limpar imagem do storage
+      if (originalImageRef.current) {
+        const BUCKET = "precificacao";
+        const filePath = originalImageRef.current.split(`/${BUCKET}/`)[1];
+        if (filePath) {
+          await supabase.storage.from(BUCKET).remove([filePath]);
+        }
+      }
+
+      router.push("/precificacao");
+    } catch (error: any) {
+      alert(`Erro ao deletar: ${error.message || "Tente novamente"}`);
+    } finally {
+      setSaving(false);
+      setShowDeleteModal(false);
+    }
+  };
+
 
   const uploadImage = async (base64: string): Promise<string> => {
     const BUCKET = "precificacao";
@@ -166,10 +217,15 @@ function NovoProdutoContent() {
     while (n--) u8arr[n] = bstr.charCodeAt(n);
     const blob = new Blob([u8arr], { type: mime });
 
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+    const extension = mime.split("/")[1] || "webp";
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
     const filePath = `uploads/${fileName}`;
 
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, { contentType: mime });
+    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, { 
+      contentType: mime,
+      cacheControl: '3600',
+      upsert: false
+    });
     if (error) throw error;
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
@@ -177,6 +233,7 @@ function NovoProdutoContent() {
   };
 
   const handleSave = async () => {
+    if (saving) return;
     if (!nome.trim()) {
       alert("Preencha o nome do produto antes de salvar.");
       return;
@@ -532,6 +589,36 @@ function NovoProdutoContent() {
           )}
 
         </div>
+
+        {/* Modais de Confirmação */}
+        <ConfirmationModal
+          isOpen={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={() => {
+            setShowCancelModal(false);
+            router.back();
+          }}
+          title="Cancelar Alterações"
+          message="Tem certeza que deseja sair? Todas as informações não salvas serão perdidas permanentemente."
+          confirmText="Sim, Sair"
+          variant="warning"
+        />
+
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => { setShowDeleteModal(false); setDependentBudgets([]); }}
+          onConfirm={() => {
+            confirmDelete();
+          }}
+          title={dependentBudgets.length > 0 ? "Exclusão Bloqueada" : "Excluir Produto"}
+          message={dependentBudgets.length > 0 
+            ? "Este produto não pode ser excluído porque está vinculado aos orçamentos abaixo. Remova-o dos orçamentos primeiro."
+            : `Tem certeza que deseja excluir o produto "${nome}"? Esta ação não pode ser desfeita.`
+          }
+          items={dependentBudgets}
+          confirmText="Sim, Excluir"
+          isLoading={saving}
+        />
       </main>
 
       {/* Modals */}

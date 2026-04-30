@@ -88,6 +88,7 @@ export function ImageUpload({ onImageChange, initialImage }: ImageUploadProps) {
             src={preview}
             alt="Preview"
             fill
+            sizes="(max-width: 768px) 100vw, 320px"
             className={`object-contain transition-all duration-500 ${isProcessing ? 'scale-90 blur-sm opacity-50' : 'scale-100 opacity-100'}`}
             unoptimized={preview.startsWith("data:")}
           />

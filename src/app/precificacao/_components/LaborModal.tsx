@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock } from "lucide-react";
 
-interface LaborModalProps {
+export interface LaborModalProps {
   onClose: () => void;
   onConfirm: (totalSeconds: number, hourlyRate: number) => void;
   hourlyRate?: number;

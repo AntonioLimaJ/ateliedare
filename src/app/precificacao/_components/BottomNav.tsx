@@ -1,12 +1,12 @@
 "use client";
 
-import { Calculator, Users } from "lucide-react";
+import { Calculator, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
   { icon: Calculator, label: "Precificar", href: "/precificacao" },
-  { icon: Users, label: "Contatos", href: "/precificacao/contatos" },
+  { icon: DollarSign, label: "Orçamentos", href: "/precificacao/Orcamentos" },
 ];
 
 export function BottomNav() {
@@ -21,9 +21,8 @@ export function BottomNav() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors ${
-                isActive ? "text-purple-400" : "text-zinc-500 hover:text-zinc-400"
-              }`}
+              className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors ${isActive ? "text-purple-400" : "text-zinc-500 hover:text-zinc-400"
+                }`}
             >
               <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
               <span className="text-[10px] font-medium uppercase tracking-wider">

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { 
-  X, 
-  Search, 
-  Filter, 
-  Plus, 
-  ChevronRight, 
-  Check, 
+import {
+  X,
+  Search,
+  Filter,
+  Plus,
+  ChevronRight,
+  Check,
   ChevronLeft,
   Info,
   Tag,
@@ -28,7 +28,7 @@ export interface Material {
   observacoes?: string;
 }
 
-interface MaterialSelectionModalProps {
+export interface MaterialSelectionModalProps {
   onClose: () => void;
   onSelect: (material: Material) => void;
   onAddNew: () => void;
@@ -50,7 +50,7 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
         .from("materiais")
         .select("*")
         .order("nome");
-      
+
       if (error) throw error;
       setMaterials(data || []);
     } catch (error: any) {
@@ -60,7 +60,7 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
     }
   };
 
-  const filteredMaterials = materials.filter(m => 
+  const filteredMaterials = materials.filter(m =>
     m.nome.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -75,7 +75,7 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
         <div className="relative">
           <div className="bg-transparent border border-zinc-800 rounded-2xl flex items-center px-4 py-4 focus-within:border-zinc-700 transition-colors">
             <Search size={20} className="text-zinc-500 mr-3" />
-            <input 
+            <input
               type="text"
               placeholder="Digite alguma coisa aqui..."
               value={search}
@@ -119,14 +119,14 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
       </div>
 
       <footer className="p-8 flex justify-end items-center gap-8">
-        <button 
+        <button
           onClick={onAddNew}
           className="flex items-center gap-2 text-purple-400 font-bold text-lg"
         >
           <Plus size={20} />
           Novo
         </button>
-        <button 
+        <button
           onClick={onClose}
           className="text-purple-400 font-bold text-lg"
         >
@@ -155,7 +155,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
     "Área": ["cm²", "m²"],
     "Unidade": ["Unidade"]
   };
-  
+
   const options = optionsMap[material.tipo_medida || "Unidade"] || ["Unidade"];
 
   useEffect(() => {
@@ -166,7 +166,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
   const calculateCost = () => {
     if (!quantidade) return 0;
-    
+
     let baseQty = Number(quantidade);
     const precoBase = material.preco_unitario || 0;
 
@@ -183,7 +183,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4">
-      <motion.div 
+      <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         className="bg-[#1e1e1e] w-full max-w-md rounded-[32px] p-8 space-y-8 shadow-2xl"
@@ -204,7 +204,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
               Quantidade
             </label>
             <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
-              <input 
+              <input
                 type="number"
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
@@ -218,7 +218,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
             <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
               Unidade
             </label>
-            <select 
+            <select
               value={unidade}
               onChange={(e) => setUnidade(e.target.value)}
               className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 w-full text-white font-medium outline-none appearance-none"
@@ -234,12 +234,12 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
         </div>
 
         <div className="bg-[#121212] rounded-2xl p-6 space-y-1 shadow-inner text-center">
-           <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Custo para este produto</p>
-           <p className="text-3xl font-bold text-sky-400">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Custo para este produto</p>
+          <p className="text-3xl font-bold text-sky-400">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
         </div>
 
         <div className="space-y-3">
-          <button 
+          <button
             onClick={() => onConfirm({ materialId: material.id, nome: material.nome, quantidade: Number(quantidade), unidade, custo })}
             disabled={!quantidade || Number(quantidade) <= 0}
             className="w-full py-5 bg-purple-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
@@ -295,10 +295,10 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
   const handleSave = async () => {
     if (!nome) return alert("O nome do material é obrigatório.");
-    
+
     try {
       setSaving(true);
-      
+
       let finalImageUrl = imagem;
       if (imagemNova && imagem?.startsWith("data:")) {
         finalImageUrl = await uploadImage(imagem);
@@ -320,7 +320,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
           .eq("id", material.id)
           .select()
           .single());
-        
+
         // Cleanup old image if changed
         if (originalImageRef.current && originalImageRef.current !== finalImageUrl) {
           const BUCKET = "precificacao";
@@ -346,6 +346,17 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
     }
   };
 
+  const onDelete = async () => {
+    if (confirm("Deseja realmente deletar o material?")) {
+      const { error } = await supabase.from("materiais").delete().eq("id", material?.id);
+      if (error) {
+        console.error("Erro ao deletar material:", error.message || error);
+        return;
+      }
+      onClose();
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[110] bg-[#121212] flex flex-col overflow-y-auto">
       <header className="sticky top-0 z-50 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
@@ -355,8 +366,8 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
           </button>
           <h1 className="text-xl font-bold tracking-tight">{isEdit ? "Editar Material" : "Novo Material"}</h1>
         </div>
-        <button 
-          onClick={handleSave} 
+        <button
+          onClick={handleSave}
           className={`p-2 -mr-2 ${saving ? "opacity-50 animate-pulse" : "hover:bg-black/10 rounded-full transition-colors"}`}
           disabled={saving}
         >
@@ -367,26 +378,26 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
       <main className="p-4 space-y-6 pb-32">
         {/* Image Section */}
         <section className="bg-[#1e1e1e] rounded-[32px] p-6 shadow-xl">
-          <ImageUpload 
+          <ImageUpload
             onImageChange={(img, isNew) => {
               setImagem(img);
               setImagemNova(isNew || false);
-            }} 
-            initialImage={imagem} 
+            }}
+            initialImage={imagem}
           />
         </section>
 
         {/* Material Group */}
         <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
           <h2 className="text-xl font-bold">Material</h2>
-          
+
           <div className="space-y-6">
             <div className="relative">
               <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                 Nome do material
               </label>
               <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
-                <input 
+                <input
                   type="text"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
@@ -400,11 +411,11 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                 Observações (opcional)
               </label>
               <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
-                  className="bg-transparent w-full text-white font-medium outline-none" 
+                  className="bg-transparent w-full text-white font-medium outline-none"
                 />
               </div>
             </div>
@@ -413,7 +424,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
               <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                 Tipo de medida
               </label>
-              <select 
+              <select
                 value={tipoMedida}
                 onChange={(e) => setTipoMedida(e.target.value)}
                 className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 w-full text-white font-medium outline-none appearance-none"
@@ -442,75 +453,84 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
         {/* Preço Group */}
         <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
-           <h2 className="text-xl font-bold">Preço</h2>
-           
-           <div className="space-y-4">
-              <div className="relative">
-                <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                  Preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}
-                </label>
-                <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center">
-                  <span className="text-zinc-500 mr-1">R$</span>
-                  <input 
-                    type="number"
-                    value={preco}
-                    onChange={(e) => setPreco(e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="0"
-                    className="bg-transparent w-full text-white font-bold outline-none"
-                  />
-                </div>
-              </div>
+          <h2 className="text-xl font-bold">Preço</h2>
 
-              <button 
-                onClick={() => setShowCalculator(true)}
-                className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <Tag size={20} className="text-purple-400" />
-                  <span className="text-zinc-100 font-medium">Descobrir preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}</span>
-                </div>
-                <ChevronRight size={20} className="text-purple-400" />
-              </button>
-           </div>
+          <div className="space-y-4">
+            <div className="relative">
+              <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                Preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}
+              </label>
+              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center">
+                <span className="text-zinc-500 mr-1">R$</span>
+                <input
+                  type="number"
+                  value={preco}
+                  onChange={(e) => setPreco(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="0"
+                  className="bg-transparent w-full text-white font-bold outline-none"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowCalculator(true)}
+              className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <Tag size={20} className="text-purple-400" />
+                <span className="text-zinc-100 font-medium">Descobrir preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}</span>
+              </div>
+              <ChevronRight size={20} className="text-purple-400" />
+            </button>
+          </div>
         </section>
 
         {/* Fornecedor Group */}
         <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
-           <h2 className="text-xl font-bold text-zinc-800">Fornecedor</h2>
-           <div className="relative opacity-50 pointer-events-none">
-              <div className="bg-transparent border border-zinc-800 rounded-xl px-4 py-4 flex items-center justify-between">
-                <span className="text-zinc-600 font-medium">Clique para escolher</span>
-                <ChevronDown size={20} className="text-zinc-800" />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                 <Lock size={32} className="text-white" />
-              </div>
-           </div>
+          <h2 className="text-xl font-bold text-zinc-800">Fornecedor</h2>
+          <div className="relative opacity-50 pointer-events-none">
+            <div className="bg-transparent border border-zinc-800 rounded-xl px-4 py-4 flex items-center justify-between">
+              <span className="text-zinc-600 font-medium">Clique para escolher</span>
+              <ChevronDown size={20} className="text-zinc-800" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Lock size={32} className="text-white" />
+            </div>
+          </div>
         </section>
 
         {/* Final Actions */}
         <div className="space-y-3 pt-6">
-           <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             disabled={saving}
             className={`w-full py-5 bg-[#c084fc] text-zinc-900 font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
-           >
-              {saving ? "Salvando..." : "Salvar alterações"}
-           </button>
-           <button 
-            onClick={onClose} 
+          >
+            {saving ? "Salvando..." : "Salvar alterações"}
+          </button>
+          <button
+            onClick={onClose}
             disabled={saving}
             className="w-full py-5 border border-zinc-700 text-zinc-100 font-bold rounded-[20px] active:bg-white/5 transition-colors"
-           >
-              Cancelar
-           </button>
+          >
+            Cancelar
+          </button>
+          {isEdit && (
+            <button
+              onClick={onDelete}
+              disabled={saving}
+              className="w-full py-5 border border-red-500 text-red-500 font-bold rounded-[20px] active:bg-red-900/10 transition-colors"
+            >
+              Deletar
+            </button>
+          )}
         </div>
       </main>
 
       {/* Calculator Modal */}
       <AnimatePresence>
         {showCalculator && (
-          <MaterialCalculatorModal 
+          <MaterialCalculatorModal
             tipoMedida={tipoMedida}
             onClose={() => setShowCalculator(false)}
             onUse={(val) => {
@@ -549,9 +569,9 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
 
   const calculateResult = () => {
     if (!quantidade || !precoPago) return 0;
-    
+
     let baseQty = Number(quantidade);
-    
+
     // Convert to base unit (m, kg, l, etc)
     if (compraEm.includes("(cm)") || compraEm.includes("(g)") || compraEm.includes("(ml)")) {
       baseQty = baseQty / 1000;
@@ -568,7 +588,7 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
 
   return (
     <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
-      <motion.div 
+      <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         className="bg-[#1e1e1e] w-full rounded-[32px] p-8 space-y-8 shadow-2xl"
@@ -583,7 +603,7 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
             <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
               Você compra em
             </label>
-            <select 
+            <select
               value={compraEm}
               onChange={(e) => setCompraEm(e.target.value)}
               className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 w-full text-white font-medium outline-none appearance-none"
@@ -602,12 +622,12 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
               Quantidade
             </label>
             <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
-              <input 
-                type="number" 
+              <input
+                type="number"
                 placeholder="Ex: 50"
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
-                className="bg-transparent w-full text-white outline-none font-medium" 
+                className="bg-transparent w-full text-white outline-none font-medium"
               />
             </div>
           </div>
@@ -618,7 +638,7 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
             </label>
             <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center">
               <span className="text-zinc-500 mr-1">R$</span>
-              <input 
+              <input
                 type="number"
                 placeholder="0,00"
                 value={precoPago}
@@ -629,20 +649,20 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
           </div>
 
           <div className="bg-[#121212] rounded-2xl p-6 space-y-1 shadow-inner">
-             <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Preço final calculado</p>
-             <p className="text-2xl font-bold text-sky-400">R$ {canUse ? result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00"}</p>
+            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Preço final calculado</p>
+            <p className="text-2xl font-bold text-sky-400">R$ {canUse ? result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00"}</p>
           </div>
         </div>
 
         <div className="space-y-3 pt-4">
-          <button 
+          <button
             onClick={() => onUse(result)}
             disabled={!canUse}
             className={`w-full py-4 font-bold rounded-2xl transition-all ${canUse ? "bg-purple-500 text-white shadow-lg active:scale-[0.98]" : "bg-zinc-800 text-zinc-600 pointer-events-none"}`}
           >
             Usar esse valor
           </button>
-          <button 
+          <button
             onClick={onClose}
             className="w-full py-4 border border-zinc-700 text-zinc-300 font-bold rounded-2xl active:bg-white/5 transition-colors"
           >
@@ -656,19 +676,19 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
 
 function ChevronDown({ size, className }: { size: number, className?: string }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <path d="m6 9 6 6 6-6"/>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, User, Lock, Star, Package, Pencil } from "lucide-react";
+import { Plus, Search, User, Lock, Star, Package, Pencil, Trash } from "lucide-react";
 import { BottomNav } from "./_components/BottomNav";
 import { TopTabs } from "./_components/TopTabs";
 import { CustosTab, useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "./_components/CustosTab";
@@ -119,7 +119,7 @@ export default function PrecificacaoDashboard() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-zinc-100 leading-tight">Ateliê da Re</h1>
-            <p className="text-[11px] font-medium text-purple-400 uppercase tracking-widest">Aromas e Artes</p>
+            <p className="text-[11px] font-medium text-purple-400 uppercase tracking-widest">Bordados Eletrônicos</p>
           </div>
         </div>
         <button className="w-10 h-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400">

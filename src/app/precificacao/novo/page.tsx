@@ -17,8 +17,8 @@ import {
 import { ImageUpload } from "../_components/ImageUpload";
 import { PricingTable, PriceEditModal } from "../_components/PricingTable";
 import { ProfitInputModal, ProfitSuggestionsModal } from "../_components/ProfitModals";
-import { MaterialSelectionModal, MaterialFormModal, MaterialUsageModal } from "../_components/MaterialManager";
-import { LaborModal } from "../_components/LaborModal";
+import { MaterialSelectionModal, MaterialFormModal, MaterialUsageModal, Material, MaterialSelectionModalProps } from "../_components/MaterialManager";
+import { LaborModal, LaborModalProps } from "../_components/LaborModal";
 import { EtiquetaSelectionModal, EtiquetaFormModal } from "../_components/TagManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -117,6 +117,28 @@ function NovoProdutoContent() {
     }
   };
 
+  const handleDelete = async () => {
+    if (confirm("Deseja realmente deletar o produto? Todas as alterações serão perdidas.")) {
+      const { error } = await supabase.from("produtos").delete().eq("id", editId);
+      if (error) {
+        console.error("Error deleting product:", error);
+        return;
+      }
+      if (originalImageRef.current && originalImageRef.current !== imagem) {
+        const BUCKET = "precificacao";
+        const filePath = originalImageRef.current.replace(
+          `https://fwpkggjjvifxydigfnhz.supabase.co/storage/v1/object/public/`,
+          ""
+        );
+        const { error: removeError } = await supabase.storage.from(BUCKET).remove([filePath]);
+        if (removeError) {
+          console.error("Error removing image:", removeError);
+        }
+      }
+      router.back();
+    }
+  };
+
   const uploadImage = async (base64: string): Promise<string> => {
     const BUCKET = "precificacao";
     const [meta, data] = base64.split(",");
@@ -169,7 +191,7 @@ function NovoProdutoContent() {
       if (editId) {
         const { error } = await supabase.from("produtos").update(payload).eq("id", editId);
         if (error) throw error;
-        
+
         // Cleanup old image from storage if changed
         if (originalImageRef.current && originalImageRef.current !== finalImageUrl) {
           const BUCKET = "precificacao";
@@ -226,12 +248,12 @@ function NovoProdutoContent() {
       <main className="max-w-md mx-auto p-4 space-y-6 mt-4">
         {/* Image Section */}
         <section className="bg-[#1e1e1e] rounded-[32px] p-6 shadow-xl">
-          <ImageUpload 
+          <ImageUpload
             onImageChange={(img, isNew) => {
               setImagem(img);
               setImagemNova(isNew || false);
-            }} 
-            initialImage={imagem} 
+            }}
+            initialImage={imagem}
           />
         </section>
 
@@ -482,6 +504,16 @@ function NovoProdutoContent() {
           >
             Cancelar
           </button>
+          {editId && (
+            <button
+              onClick={handleDelete}
+              disabled={saving}
+              className="w-full py-5 border border-zinc-700 hover:bg-white/5 text-red-400 font-bold rounded-[20px] transition-colors"
+            >
+              Deletar produto
+            </button>
+          )}
+
         </div>
       </main>
 
@@ -518,7 +550,7 @@ function NovoProdutoContent() {
               setShowMaterialSelection(false);
               setShowMaterialForm(true);
             }}
-            onSelect={(m) => {
+            onSelect={(m: Material) => {
               setSelectedMaterialForUsage(m);
               setShowMaterialSelection(false);
             }}
@@ -546,7 +578,7 @@ function NovoProdutoContent() {
         {showLaborModal && (
           <LaborModal
             onClose={() => setShowLaborModal(false)}
-            onConfirm={(seconds) => {
+            onConfirm={(seconds: number) => {
               setTempoTrabalho(seconds);
               setShowLaborModal(false);
             }}

@@ -72,30 +72,30 @@ export function InstallPWA() {
           exit={{ opacity: 0, y: 50 }}
           className="fixed bottom-24 left-4 right-4 z-[9999] flex justify-center select-none"
         >
-          <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[28px] p-4 shadow-2xl flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+          <div className="relative w-full max-w-md bg-white border border-[#F0E6E6] rounded-[28px] p-4 shadow-2xl flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-tr from-[#E5989B] to-[#D4A5A5] rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Download className="text-white" size={24} />
             </div>
             
             <div className="flex-1">
               <div className="flex items-center gap-1">
-                <span className="text-white font-bold text-sm">App Apreço</span>
-                <Sparkles className="text-yellow-400" size={12} />
+                <span className="text-[#2D2D2D] font-bold text-sm">App Apreço</span>
+                <Sparkles className="text-yellow-500" size={12} />
               </div>
-              <p className="text-zinc-500 text-[10px]">Instale agora no seu celular</p>
+              <p className="text-[#6D6D6D] text-[10px]">Instale agora no seu celular</p>
             </div>
 
             <div className="flex items-center gap-2">
               {isIOS ? (
-                <div className="bg-white/5 px-3 py-2 rounded-xl flex items-center gap-2 border border-white/5">
-                  <Share size={14} className="text-purple-400" />
-                  <span className="text-white text-[10px] font-bold">Compartilhar</span>
+                <div className="bg-[#FAF7F2] px-3 py-2 rounded-xl flex items-center gap-2 border border-[#F0E6E6]">
+                  <Share size={14} className="text-[#E5989B]" />
+                  <span className="text-[#2D2D2D] text-[10px] font-bold">Compartilhar</span>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={handleInstallClick}
-                  className="bg-white text-black px-5 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition-all"
+                  className="bg-[#E5989B] text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition-all"
                 >
                   Instalar
                 </button>
@@ -104,7 +104,7 @@ export function InstallPWA() {
               <button
                 type="button"
                 onClick={() => setIsVisible(false)}
-                className="p-2 text-zinc-600 hover:text-white"
+                className="p-2 text-[#9E9E9E] hover:text-[#2D2D2D]"
               >
                 <X size={20} />
               </button>

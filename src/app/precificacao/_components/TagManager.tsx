@@ -55,8 +55,8 @@ export function EtiquetaSelectionModal({ onClose, onSelect, onAddNew }: Etiqueta
   );
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#121212] flex flex-col">
-      <header className="sticky top-0 z-50 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
+    <div className="fixed inset-0 z-[100] bg-[#FAF7F2] flex flex-col text-[#2D2D2D]">
+      <header className="sticky top-0 z-50 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-4">
           <button onClick={onClose} className="p-2 -ml-2">
             <ChevronLeft size={24} />
@@ -70,44 +70,44 @@ export function EtiquetaSelectionModal({ onClose, onSelect, onAddNew }: Etiqueta
 
       <div className="p-6">
         <div className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9E9E9E]" size={20} />
           <input 
             type="text" 
             placeholder="Procurar etiquetas..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#1e1e1e] border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-500 outline-none focus:border-purple-500 transition-colors shadow-inner"
+            className="w-full bg-white border border-[#F0E6E6] rounded-2xl py-4 pl-12 pr-4 text-[#2D2D2D] placeholder-[#9E9E9E] outline-none focus:border-[#E5989B] transition-colors shadow-inner"
           />
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <div className="w-8 h-8 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
-            <p className="text-zinc-500 font-medium">Carregando etiquetas...</p>
+            <div className="w-8 h-8 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
+            <p className="text-[#9E9E9E] font-medium">Carregando etiquetas...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-1 text-center">
-             <div className="w-16 h-16 bg-zinc-800/30 rounded-full flex items-center justify-center mb-4">
-               <TagIcon size={32} className="text-zinc-700" />
+             <div className="w-16 h-16 bg-[#F8EDEB] rounded-full flex items-center justify-center mb-4">
+               <TagIcon size={32} className="text-[#E5989B]/50" />
              </div>
-             <p className="text-zinc-100 font-bold">Nenhuma etiqueta encontrada</p>
-             <p className="text-sm text-zinc-500 max-w-[200px]">Crie uma nova etiqueta no botão "+" acima.</p>
+             <p className="text-[#2D2D2D] font-bold">Nenhuma etiqueta encontrada</p>
+             <p className="text-sm text-[#9E9E9E] max-w-[200px]">Crie uma nova etiqueta no botão "+" acima.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {filtered.map((e) => (
-              <button 
+               <button 
                 key={e.id}
                 onClick={() => onSelect(e)}
-                className="flex items-center justify-between bg-[#1e1e1e] p-5 rounded-2xl border border-zinc-800 hover:border-purple-500/50 transition-all active:scale-[0.98] group"
+                className="flex items-center justify-between bg-white p-5 rounded-2xl border border-[#F0E6E6] hover:border-[#E5989B]/50 transition-all active:scale-[0.98] group shadow-sm"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                    <TagIcon className="text-purple-400" size={20} />
+                  <div className="w-10 h-10 bg-[#F8EDEB] rounded-xl flex items-center justify-center group-hover:bg-[#E5989B]/10 transition-colors">
+                    <TagIcon className="text-[#E5989B]" size={20} />
                   </div>
-                  <span className="text-zinc-100 font-bold">{e.nome}</span>
+                  <span className="text-[#2D2D2D] font-bold">{e.nome}</span>
                 </div>
-                <ChevronRight size={20} className="text-zinc-600 group-hover:text-purple-400 transition-colors" />
+                <ChevronRight size={20} className="text-[#9E9E9E] group-hover:text-[#E5989B] transition-colors" />
               </button>
             ))}
           </div>
@@ -148,8 +148,8 @@ export function EtiquetaFormModal({ onClose, onSave }: EtiquetaFormModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[110] bg-[#121212] flex flex-col overflow-y-auto">
-      <header className="sticky top-0 z-50 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
+    <div className="fixed inset-0 z-[110] bg-[#FAF7F2] flex flex-col overflow-y-auto">
+      <header className="sticky top-0 z-50 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-4">
           <button onClick={onClose} className="p-2 -ml-2" disabled={saving}>
             <ChevronLeft size={24} />
@@ -167,28 +167,28 @@ export function EtiquetaFormModal({ onClose, onSave }: EtiquetaFormModalProps) {
 
       <main className="max-w-md mx-auto w-full p-6 space-y-8 mt-4">
         {/* Breadcrumb replicate */}
-        <div className="bg-[#1e1e1e] border border-zinc-800 rounded-2xl p-4">
-           <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest leading-relaxed">
+        <div className="bg-white border border-[#F0E6E6] rounded-2xl p-4 shadow-sm">
+           <p className="text-[11px] font-bold text-[#9E9E9E] uppercase tracking-widest leading-relaxed">
              Editar Produto &gt; Escolher Etiquetas &gt; <br/>
-             <span className="text-sky-400">Nova Etiqueta</span>
+             <span className="text-[#E5989B]">Nova Etiqueta</span>
            </p>
         </div>
 
-        <section className="bg-[#1e1e1e] rounded-[32px] p-8 space-y-8 shadow-xl">
-          <h2 className="text-2xl font-bold text-white">Etiqueta</h2>
+        <section className="bg-white rounded-[32px] p-8 space-y-8 shadow-xl border border-[#F0E6E6]">
+          <h2 className="text-2xl font-bold text-[#2D2D2D]">Etiqueta</h2>
           
           <div className="space-y-4">
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
                 Nome
               </label>
-              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-5">
+              <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-5">
                 <input 
                   type="text" 
                   placeholder="Nome da etiqueta"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="bg-transparent w-full text-white font-bold outline-none" 
+                  className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none" 
                   autoFocus
                 />
               </div>
@@ -200,14 +200,14 @@ export function EtiquetaFormModal({ onClose, onSave }: EtiquetaFormModalProps) {
            <button 
             onClick={handleSave} 
             disabled={saving}
-            className={`w-full py-5 bg-[#c084fc] text-zinc-900 font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
+            className={`w-full py-5 bg-[#E5989B] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
            >
               {saving ? "Salvando..." : "Salvar alterações"}
            </button>
            <button 
             onClick={onClose} 
             disabled={saving}
-            className="w-full py-5 border border-zinc-700 text-zinc-100 font-bold rounded-[20px] active:bg-white/5 transition-colors"
+            className="w-full py-5 border border-[#F0E6E6] text-[#2D2D2D] font-bold rounded-[20px] active:bg-[#F8EDEB] transition-colors"
            >
               Cancelar
            </button>

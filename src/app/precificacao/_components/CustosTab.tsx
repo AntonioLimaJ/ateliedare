@@ -151,8 +151,8 @@ function TrabalhoModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#121212] flex flex-col overflow-y-auto">
-      <header className="sticky top-0 z-10 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
+    <div className="fixed inset-0 z-[200] bg-[#FAF7F2] flex flex-col overflow-y-auto text-[#2D2D2D]">
+      <header className="sticky top-0 z-10 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-3">
           <button onClick={onClose} className="p-2 -ml-2">
             <X size={24} />
@@ -166,35 +166,35 @@ function TrabalhoModal({
 
       <main className="p-4 space-y-6 pb-16">
         {/* Salário */}
-        <section className="bg-[#1e1e1e] rounded-[28px] p-6 space-y-4 shadow-xl">
+        <section className="bg-white rounded-[28px] p-6 space-y-4 shadow-xl border border-[#F0E6E6]">
           <h2 className="text-lg font-bold">Salário Mensal</h2>
-          <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center gap-2">
-            <span className="text-zinc-500 font-bold">R$</span>
+          <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center gap-2">
+            <span className="text-[#9E9E9E] font-bold">R$</span>
             <input
               type="number"
               value={local.salario_mensal || ""}
               onChange={(e) => setLocal({ ...local, salario_mensal: Number(e.target.value) || 0 })}
               placeholder="0,00"
-              className="bg-transparent w-full text-white font-bold text-xl outline-none"
+              className="bg-transparent w-full text-[#2D2D2D] font-bold text-xl outline-none"
             />
           </div>
         </section>
 
         {/* Jornada */}
-        <section className="bg-[#1e1e1e] rounded-[28px] p-6 space-y-6 shadow-xl">
+        <section className="bg-white rounded-[28px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
           <h2 className="text-lg font-bold">Jornada de Trabalho</h2>
 
           {/* Modo */}
           <div className="flex gap-2">
             <button
               onClick={() => setModoIgual(true)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${modoIgual ? "bg-purple-500 text-white" : "bg-zinc-800 text-zinc-400"}`}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${modoIgual ? "bg-[#E5989B] text-white" : "bg-[#F0E6E6] text-[#9E9E9E]"}`}
             >
               Mesmo horário
             </button>
             <button
               onClick={() => setModoIgual(false)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${!modoIgual ? "bg-purple-500 text-white" : "bg-zinc-800 text-zinc-400"}`}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${!modoIgual ? "bg-[#E5989B] text-white" : "bg-[#F0E6E6] text-[#9E9E9E]"}`}
             >
               Personalizado
             </button>
@@ -210,7 +210,7 @@ function TrabalhoModal({
                   onTouchEnd={(e) => { e.stopPropagation(); modoIgual ? toggleDia(d.key) : null; }}
                   onClick={() => modoIgual ? toggleDia(d.key) : null}
                   style={{ touchAction: "manipulation" }}
-                  className={`w-11 h-11 rounded-xl text-sm font-bold transition-colors ${active ? "bg-purple-500 text-white" : "bg-zinc-800 text-zinc-500"}`}
+                  className={`w-11 h-11 rounded-xl text-sm font-bold transition-colors ${active ? "bg-[#E5989B] text-white" : "bg-[#F0E6E6] text-[#9E9E9E]"}`}
                 >
                   {d.label}
                 </button>
@@ -220,33 +220,33 @@ function TrabalhoModal({
 
           {modoIgual ? (
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Horas por dia</label>
-              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center gap-2">
-                <Clock size={16} className="text-zinc-500" />
+              <label className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Horas por dia</label>
+              <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center gap-2">
+                <Clock size={16} className="text-[#9E9E9E]" />
                 <input
                   type="number"
                   value={horasIgual || ""}
                   onChange={(e) => applyHorasIgual(Number(e.target.value) || 0)}
                   placeholder="8"
-                  className="bg-transparent w-full text-white font-bold outline-none"
+                  className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
                 />
-                <span className="text-zinc-500 text-sm">h/dia</span>
+                <span className="text-[#9E9E9E] text-sm">h/dia</span>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
               {DIAS.map((d) => (
                 <div key={d.key} className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-zinc-400 w-8">{d.label}</span>
-                  <div className="flex-1 bg-transparent border border-zinc-700 rounded-xl px-4 py-3 flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#9E9E9E] w-8">{d.label}</span>
+                  <div className="flex-1 bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-3 flex items-center gap-2">
                     <input
                       type="number"
                       value={(local[d.key as keyof Configuracoes] as number) || ""}
                       onChange={(e) => setLocal({ ...local, [d.key]: Number(e.target.value) || 0 })}
                       placeholder="0"
-                      className="bg-transparent w-full text-white font-bold outline-none"
+                      className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
                     />
-                    <span className="text-zinc-500 text-xs">h</span>
+                    <span className="text-[#9E9E9E] text-xs">h</span>
                   </div>
                 </div>
               ))}
@@ -255,20 +255,20 @@ function TrabalhoModal({
         </section>
 
         {/* Resultado */}
-        <section className="bg-[#1e1e1e] rounded-[28px] p-6 space-y-4 shadow-xl">
+        <section className="bg-white rounded-[28px] p-6 space-y-4 shadow-xl border border-[#F0E6E6]">
           <h2 className="text-lg font-bold">Resultado</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-400">Horas por semana</span>
-              <span className="text-sm font-bold text-zinc-100">{horasSemana.toFixed(1)}h</span>
+              <span className="text-sm text-[#6D6D6D]">Horas por semana</span>
+              <span className="text-sm font-bold text-[#2D2D2D]">{horasSemana.toFixed(1)}h</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-400">Horas por mês</span>
-              <span className="text-sm font-bold text-zinc-100">{horasMes.toFixed(1)}h</span>
+              <span className="text-sm text-[#6D6D6D]">Horas por mês</span>
+              <span className="text-sm font-bold text-[#2D2D2D]">{horasMes.toFixed(1)}h</span>
             </div>
-            <div className="border-t border-zinc-800 pt-3 flex justify-between items-center">
-              <span className="text-sm font-bold text-zinc-100">Custo por hora</span>
-              <span className="text-lg font-bold text-purple-400">
+            <div className="border-t border-[#F0E6E6] pt-3 flex justify-between items-center">
+              <span className="text-sm font-bold text-[#2D2D2D]">Custo por hora</span>
+              <span className="text-lg font-bold text-[#E5989B]">
                 R$ {custoHora.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
@@ -301,8 +301,8 @@ function TaxasModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#121212] flex flex-col overflow-y-auto">
-      <header className="sticky top-0 z-10 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
+    <div className="fixed inset-0 z-[200] bg-[#FAF7F2] flex flex-col overflow-y-auto text-[#2D2D2D]">
+      <header className="sticky top-0 z-10 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-3">
           <button onClick={onClose} className="p-2 -ml-2"><X size={24} /></button>
           <h1 className="text-xl font-bold">Configurar Taxas</h1>
@@ -313,9 +313,9 @@ function TaxasModal({
       </header>
 
       <main className="p-4 space-y-6 pb-16">
-        <section className="bg-[#1e1e1e] rounded-[28px] p-6 space-y-6 shadow-xl">
+        <section className="bg-white rounded-[28px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
           <h2 className="text-lg font-bold">Taxas (%)</h2>
-          <p className="text-xs text-zinc-500">Coloque o percentual de cada taxa. Use o maior valor que você paga.</p>
+          <p className="text-xs text-[#6D6D6D]">Coloque o percentual de cada taxa. Use o maior valor que você paga.</p>
 
           {[
             { key: "imposto_pct", label: "Impostos", desc: "Soma de todos os impostos" },
@@ -324,25 +324,25 @@ function TaxasModal({
           ].map(({ key, label, desc }) => (
             <div key={key} className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-zinc-100">{label}</label>
-                <span className="text-xs text-zinc-500">{desc}</span>
+                <label className="text-sm font-bold text-[#2D2D2D]">{label}</label>
+                <span className="text-xs text-[#9E9E9E]">{desc}</span>
               </div>
-              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center gap-2">
+              <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center gap-2">
                 <input
                   type="number"
                   value={(local[key as keyof Configuracoes] as number) || ""}
                   onChange={(e) => setLocal({ ...local, [key]: Number(e.target.value) || 0 })}
                   placeholder="0"
-                  className="bg-transparent w-full text-white font-bold outline-none"
+                  className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
                 />
-                <span className="text-zinc-500 font-bold">%</span>
+                <span className="text-[#9E9E9E] font-bold">%</span>
               </div>
             </div>
           ))}
 
-          <div className="border-t border-zinc-800 pt-4 flex justify-between items-center">
-            <span className="text-sm font-bold text-zinc-100">Total de taxas</span>
-            <span className="text-lg font-bold text-sky-400">{totalPct.toFixed(2)}%</span>
+          <div className="border-t border-[#F0E6E6] pt-4 flex justify-between items-center">
+            <span className="text-sm font-bold text-[#2D2D2D]">Total de taxas</span>
+            <span className="text-lg font-bold text-[#E5989B]">{totalPct.toFixed(2)}%</span>
           </div>
         </section>
       </main>
@@ -362,31 +362,31 @@ function AddCustoModal({
   const [valor, setValor] = useState<number | "">("");
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70 p-4">
-      <div className="bg-[#1e1e1e] w-full max-w-md rounded-[32px] p-6 space-y-6 shadow-2xl">
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 p-4">
+      <div className="bg-white w-full max-w-md rounded-[32px] p-6 space-y-6 shadow-2xl border border-[#F0E6E6] text-[#2D2D2D]">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Novo Custo Fixo</h2>
-          <button onClick={onClose} className="text-zinc-500"><X size={20} /></button>
+          <button onClick={onClose} className="text-[#9E9E9E]"><X size={20} /></button>
         </div>
         <div className="space-y-4">
-          <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
+          <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
             <input
               type="text"
               placeholder="Nome (ex: Aluguel, Luz...)"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               autoFocus
-              className="bg-transparent w-full text-white font-medium outline-none"
+              className="bg-transparent w-full text-[#2D2D2D] font-medium outline-none"
             />
           </div>
-          <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center gap-2">
-            <span className="text-zinc-500 font-bold">R$</span>
+          <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center gap-2">
+            <span className="text-[#9E9E9E] font-bold">R$</span>
             <input
               type="number"
               placeholder="0,00"
               value={valor}
               onChange={(e) => setValor(e.target.value === "" ? "" : Number(e.target.value))}
-              className="bg-transparent w-full text-white font-bold outline-none"
+              className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
             />
           </div>
         </div>
@@ -394,11 +394,11 @@ function AddCustoModal({
           <button
             onClick={() => nome && valor && onSave(nome, Number(valor))}
             disabled={!nome || !valor}
-            className="w-full py-4 bg-purple-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-bold rounded-2xl"
+            className="w-full py-4 bg-[#E5989B] disabled:bg-[#F0E6E6] disabled:text-[#9E9E9E] text-white font-bold rounded-2xl shadow-lg"
           >
             Adicionar
           </button>
-          <button onClick={onClose} className="w-full py-3 text-zinc-500 font-bold">Cancelar</button>
+          <button onClick={onClose} className="w-full py-3 text-[#9E9E9E] font-bold">Cancelar</button>
         </div>
       </div>
     </div>
@@ -449,7 +449,7 @@ export function CustosTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
       </div>
     );
   }
@@ -460,37 +460,37 @@ export function CustosTab() {
         {/* ── Trabalho ──────────────────────────────────────────── */}
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Trabalho</h3>
+            <h3 className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Trabalho</h3>
             <button
               onClick={() => setShowTrabalho(true)}
               style={{ touchAction: "manipulation" }}
-              className="flex items-center gap-1.5 text-purple-400 text-xs font-bold active:opacity-70"
+              className="flex items-center gap-1.5 text-[#E5989B] text-xs font-bold active:opacity-70"
             >
               <Settings size={14} />
               Editar
             </button>
           </div>
 
-          <div className="bg-[#1e1e1e] rounded-2xl p-5 border border-zinc-800/50 space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-[#F0E6E6] space-y-3 shadow-sm">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-zinc-400">
-                <DollarSign size={16} className="text-purple-400" />
+              <div className="flex items-center gap-2 text-[#6D6D6D]">
+                <DollarSign size={16} className="text-[#E5989B]" />
                 <span className="text-sm">Salário mensal</span>
               </div>
-              <span className="text-sm font-bold text-zinc-100">
+              <span className="text-sm font-bold text-[#2D2D2D]">
                 R$ {config.salario_mensal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-zinc-400">
-                <Clock size={16} className="text-purple-400" />
+              <div className="flex items-center gap-2 text-[#6D6D6D]">
+                <Clock size={16} className="text-[#E5989B]" />
                 <span className="text-sm">Horas por mês</span>
               </div>
-              <span className="text-sm font-bold text-zinc-100">{horasMes.toFixed(1)}h</span>
+              <span className="text-sm font-bold text-[#2D2D2D]">{horasMes.toFixed(1)}h</span>
             </div>
-            <div className="border-t border-zinc-800 pt-3 flex justify-between items-center">
-              <span className="text-sm font-bold text-zinc-100">Custo / hora</span>
-              <span className="text-base font-bold text-purple-400">
+            <div className="border-t border-[#F0E6E6] pt-3 flex justify-between items-center">
+              <span className="text-sm font-bold text-[#2D2D2D]">Custo / hora</span>
+              <span className="text-base font-bold text-[#E5989B]">
                 R$ {custoHora.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
@@ -500,31 +500,31 @@ export function CustosTab() {
         {/* ── Taxas ─────────────────────────────────────────────── */}
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Taxas</h3>
+            <h3 className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Taxas</h3>
             <button
               onClick={() => setShowTaxas(true)}
               style={{ touchAction: "manipulation" }}
-              className="flex items-center gap-1.5 text-purple-400 text-xs font-bold active:opacity-70"
+              className="flex items-center gap-1.5 text-[#E5989B] text-xs font-bold active:opacity-70"
             >
               <Settings size={14} />
               Editar
             </button>
           </div>
 
-          <div className="bg-[#1e1e1e] rounded-2xl p-5 border border-zinc-800/50 space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-[#F0E6E6] space-y-3 shadow-sm">
             {[
               { label: "Impostos", value: config.imposto_pct },
               { label: "Cartão", value: config.cartao_pct },
               { label: "Comissão", value: config.comissao_pct },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between items-center">
-                <span className="text-sm text-zinc-400">{label}</span>
-                <span className="text-sm font-bold text-zinc-100">{value.toFixed(2)}%</span>
+                <span className="text-sm text-[#6D6D6D]">{label}</span>
+                <span className="text-sm font-bold text-[#2D2D2D]">{value.toFixed(2)}%</span>
               </div>
             ))}
-            <div className="border-t border-zinc-800 pt-3 flex justify-between items-center">
-              <span className="text-sm font-bold text-zinc-100">Total de taxas</span>
-              <span className="text-base font-bold text-sky-400">{totalTax.toFixed(2)}%</span>
+            <div className="border-t border-[#F0E6E6] pt-3 flex justify-between items-center">
+              <span className="text-sm font-bold text-[#2D2D2D]">Total de taxas</span>
+              <span className="text-base font-bold text-[#E5989B]">{totalTax.toFixed(2)}%</span>
             </div>
           </div>
         </div>
@@ -532,11 +532,11 @@ export function CustosTab() {
         {/* ── Custos Fixos ──────────────────────────────────────── */}
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Custos Fixos Mensais</h3>
+            <h3 className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Custos Fixos Mensais</h3>
             <button
               onClick={() => setShowAddCusto(true)}
               style={{ touchAction: "manipulation" }}
-              className="flex items-center gap-1.5 text-purple-400 text-xs font-bold active:opacity-70"
+              className="flex items-center gap-1.5 text-[#E5989B] text-xs font-bold active:opacity-70"
             >
               <Plus size={14} />
               Adicionar
@@ -545,33 +545,33 @@ export function CustosTab() {
 
           {loadingCustos ? (
             <div className="py-4 flex justify-center">
-              <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#E5989B]/30 border-t-[#E5989B] rounded-full animate-spin" />
             </div>
           ) : custosFixos.length === 0 ? (
-            <div className="bg-[#1e1e1e] rounded-2xl p-5 border border-zinc-800/50 text-center">
-              <p className="text-sm text-zinc-600">Nenhum custo fixo cadastrado</p>
+            <div className="bg-white rounded-2xl p-5 border border-[#F0E6E6] text-center shadow-sm">
+              <p className="text-sm text-[#9E9E9E]">Nenhum custo fixo cadastrado</p>
             </div>
           ) : (
             <div className="space-y-2">
               {custosFixos.map((c) => (
-                <div key={c.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-zinc-800/50 flex items-center justify-between">
-                  <span className="text-sm font-medium text-zinc-100">{c.nome}</span>
+                <div key={c.id} className="bg-white rounded-2xl p-4 border border-[#F0E6E6] flex items-center justify-between shadow-sm">
+                  <span className="text-sm font-medium text-[#2D2D2D]">{c.nome}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-zinc-300">
+                    <span className="text-sm font-bold text-[#6D6D6D]">
                       R$ {c.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <button
                       onClick={() => handleDeleteCusto(c.id)}
-                      className="text-red-500/40 hover:text-red-500 transition-colors"
+                      className="text-red-400/40 hover:text-red-400 transition-colors"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
               ))}
-              <div className="bg-zinc-800/30 rounded-2xl p-4 flex justify-between items-center">
-                <span className="text-sm font-bold text-zinc-400">Total mensal</span>
-                <span className="text-sm font-bold text-sky-400">
+              <div className="bg-[#FAF7F2] rounded-2xl p-4 flex justify-between items-center border border-[#F0E6E6]">
+                <span className="text-sm font-bold text-[#6D6D6D]">Total mensal</span>
+                <span className="text-sm font-bold text-[#E5989B]">
                   R$ {totalCustosFixos.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>

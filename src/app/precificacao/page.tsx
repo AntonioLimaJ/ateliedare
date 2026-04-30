@@ -110,19 +110,19 @@ export default function PrecificacaoDashboard() {
   const tipoLabel = (tipo: string) => ({ "Comprimento": "/m", "Peso (kg)": "/kg", "Volume (l)": "/l", "Área": "/m²" }[tipo] || "/un");
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white pb-24 font-sans antialiased selection:bg-purple-500/30">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] pb-24 font-sans antialiased selection:bg-[#E5989B]/30">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 bg-[#1e1e1e] border-b border-zinc-800 px-6 py-4 flex items-center justify-between shadow-lg">
+      <header className="sticky top-0 z-40 bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-            <User className="text-purple-400" size={20} />
+          <div className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center">
+            <User className="text-[#E5989B]" size={20} />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-zinc-100 leading-tight">Ateliê da Re</h1>
-            <p className="text-[11px] font-medium text-purple-400 uppercase tracking-widest">Bordados Eletrônicos</p>
+            <h1 className="text-sm font-bold text-[#2D2D2D] leading-tight">Ateliê da Re</h1>
+            <p className="text-[11px] font-medium text-[#E5989B] uppercase tracking-widest">Bordados Eletrônicos</p>
           </div>
         </div>
-        <button className="w-10 h-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400">
+        <button className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center text-[#6D6D6D]">
           <Search size={20} />
         </button>
       </header>
@@ -130,28 +130,28 @@ export default function PrecificacaoDashboard() {
       <main className="pt-6">
         {/* Welcome */}
         <div className="px-6 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-white">Olá, Regina! 👋</h2>
-          <p className="text-zinc-500 mt-1">Pronta para precificar?</p>
+          <h2 className="text-2xl font-bold tracking-tight text-[#2D2D2D]">Olá, Regina! 👋</h2>
+          <p className="text-[#6D6D6D] mt-1">Pronta para precificar?</p>
         </div>
 
         {/* Summary Card */}
         <div className="mx-4 mb-6">
           {activeTab === "produtos" ? (
-            <div className="p-6 rounded-3xl bg-purple-600 text-white shadow-xl shadow-purple-900/20">
-              <p className="text-sm font-medium text-purple-100">Valor Total em Estoque</p>
+            <div className="p-6 rounded-3xl bg-[#E5989B] text-white shadow-xl shadow-[#E5989B]/20">
+              <p className="text-sm font-medium text-white/90">Valor Total em Estoque</p>
               <p className="text-2xl font-bold mt-1 tracking-tight">
                 R$ {totalEstoque.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
-              <p className="text-xs text-purple-200 mt-1">{produtos.length} produto{produtos.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-white/80 mt-1">{produtos.length} produto{produtos.length !== 1 ? "s" : ""}</p>
             </div>
           ) : activeTab === "materiais" ? (
-            <div className="p-6 rounded-3xl bg-[#1e1e1e] border border-zinc-800 text-white shadow-lg">
-              <p className="text-sm font-medium text-zinc-500">Materiais Cadastrados</p>
+            <div className="p-6 rounded-3xl bg-white border border-[#F0E6E6] text-[#2D2D2D] shadow-lg">
+              <p className="text-sm font-medium text-[#6D6D6D]">Materiais Cadastrados</p>
               <p className="text-2xl font-bold mt-1 tracking-tight">{materials.length} {materials.length === 1 ? "item" : "itens"}</p>
             </div>
           ) : (
-            <div className="p-6 rounded-3xl bg-[#1e1e1e] border border-zinc-800 text-white shadow-lg">
-              <p className="text-sm font-medium text-zinc-500">Configurações de Custos</p>
+            <div className="p-6 rounded-3xl bg-white border border-[#F0E6E6] text-[#2D2D2D] shadow-lg">
+              <p className="text-sm font-medium text-[#6D6D6D]">Configurações de Custos</p>
               <p className="text-2xl font-bold mt-1 tracking-tight">
                 R$ {calcularCustoHora(config).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/h
               </p>
@@ -169,39 +169,39 @@ export default function PrecificacaoDashboard() {
           <div className="px-4 space-y-3 pb-4">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
               </div>
             ) : activeTab === "produtos" ? (
               produtos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-zinc-600">
-                  <div className="w-16 h-16 rounded-full bg-zinc-800/30 flex items-center justify-center mb-4">
+                <div className="flex flex-col items-center justify-center py-16 text-[#9E9E9E]">
+                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mb-4">
                     <Package size={32} />
                   </div>
                   <p className="text-sm font-medium">Nenhum produto cadastrado</p>
-                  <p className="text-xs text-zinc-700 mt-1">Toque no + para criar</p>
+                  <p className="text-xs text-[#9E9E9E] mt-1">Toque no + para criar</p>
                 </div>
               ) : (
                 produtos.map((p) => {
                   const preco = calcPrecoAtual(p);
                   return (
-                    <Link key={p.id} href={`/precificacao/novo?id=${p.id}`} className="bg-[#1e1e1e] rounded-2xl p-4 flex items-center gap-4 border border-zinc-800/50 active:bg-zinc-800/50 transition-colors block">
-                      <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <Link key={p.id} href={`/precificacao/novo?id=${p.id}`} className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] active:bg-[#F8EDEB] transition-colors block shadow-sm">
+                      <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
                         {p.imagem_url ? (
                           <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" />
                         ) : (
-                          <Package size={22} className="text-zinc-600" />
+                          <Package size={22} className="text-[#E5989B]" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-zinc-100 truncate">{p.nome}</p>
-                        {p.descricao && <p className="text-xs text-zinc-500 truncate">{p.descricao}</p>}
+                        <p className="text-sm font-bold text-[#2D2D2D] truncate">{p.nome}</p>
+                        {p.descricao && <p className="text-xs text-[#6D6D6D] truncate">{p.descricao}</p>}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {p.favorito && <Star size={14} className="text-yellow-400 fill-yellow-400" />}
-                        <span className="text-sm font-bold text-sky-400">
+                        <span className="text-sm font-bold text-[#E5989B]">
                           R$ {preco.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        <Pencil size={14} className="text-zinc-600" />
+                        <Pencil size={14} className="text-[#9E9E9E]" />
                       </div>
                     </Link>
                   );
@@ -210,8 +210,8 @@ export default function PrecificacaoDashboard() {
             ) : (
               // Materiais tab
               materials.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-zinc-600">
-                  <div className="w-16 h-16 rounded-full bg-zinc-800/30 flex items-center justify-center mb-4">
+                <div className="flex flex-col items-center justify-center py-16 text-[#9E9E9E]">
+                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mb-4">
                     <Plus size={32} />
                   </div>
                   <p className="text-sm font-medium">Nenhum material cadastrado</p>
@@ -222,24 +222,24 @@ export default function PrecificacaoDashboard() {
                     key={m.id}
                     onClick={() => setEditingMaterial(m)}
                     style={{ touchAction: "manipulation" }}
-                    className="w-full bg-[#1e1e1e] rounded-2xl p-4 flex items-center gap-4 border border-zinc-800/50 text-left active:bg-zinc-800/50 transition-colors"
+                    className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] text-left active:bg-[#F8EDEB] transition-colors shadow-sm"
                   >
-                    <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
                       {m.imagem_url ? (
                         <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" />
                       ) : (
-                        <Lock size={20} className="text-zinc-600" />
+                        <Lock size={20} className="text-[#E5989B]" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-zinc-100 truncate">{m.nome}</p>
-                      <p className="text-xs text-zinc-500">{m.tipo_medida}</p>
+                      <p className="text-sm font-bold text-[#2D2D2D] truncate">{m.nome}</p>
+                      <p className="text-xs text-[#6D6D6D]">{m.tipo_medida}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-sm font-bold text-purple-400">
+                      <span className="text-sm font-bold text-[#E5989B]">
                         R$ {(m.preco_unitario || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{tipoLabel(m.tipo_medida)}
                       </span>
-                      <Pencil size={14} className="text-zinc-600" />
+                      <Pencil size={14} className="text-[#9E9E9E]" />
                     </div>
                   </button>
                 ))
@@ -254,7 +254,7 @@ export default function PrecificacaoDashboard() {
         activeTab === "materiais" ? (
           <button
             onClick={() => setShowMaterialForm(true)}
-            className="fixed right-6 bottom-24 w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-purple-900/40 active:scale-95 transition-transform z-50"
+            className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
             style={{ touchAction: "manipulation" }}
           >
             <Plus size={28} />
@@ -262,7 +262,7 @@ export default function PrecificacaoDashboard() {
         ) : (
           <Link
             href="/precificacao/novo"
-            className="fixed right-6 bottom-24 w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-purple-900/40 active:scale-95 transition-transform z-50"
+            className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
           >
             <Plus size={28} />
           </Link>

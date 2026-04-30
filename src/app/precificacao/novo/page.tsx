@@ -231,9 +231,9 @@ function NovoProdutoContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white pb-32 font-sans selection:bg-purple-500/30">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] pb-32 font-sans selection:bg-[#E5989B]/30">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
+      <header className="sticky top-0 z-50 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-4">
           <button onClick={handleCancel} className="p-2 -ml-2">
             <ChevronLeft size={24} />
@@ -247,7 +247,7 @@ function NovoProdutoContent() {
 
       <main className="max-w-md mx-auto p-4 space-y-6 mt-4">
         {/* Image Section */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 shadow-xl">
+        <section className="bg-white rounded-[32px] p-6 shadow-xl border border-[#F0E6E6]">
           <ImageUpload
             onImageChange={(img, isNew) => {
               setImagem(img);
@@ -258,11 +258,11 @@ function NovoProdutoContent() {
         </section>
 
         {/* Produto Section */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
-          <h2 className="text-xl font-bold">Produto</h2>
+        <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Produto</h2>
 
           <div className="space-y-4">
-            <div className="bg-transparent border border-zinc-700 rounded-2xl px-6 py-5">
+            <div className="bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5">
               <input
                 type="text"
                 placeholder="Nome do Produto"
@@ -272,54 +272,54 @@ function NovoProdutoContent() {
                 autoCapitalize="off"
                 spellCheck={false}
                 onChange={(e) => setNome(e.target.value)}
-                className="w-full bg-transparent outline-none text-zinc-100 placeholder-zinc-500 font-medium"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
               />
             </div>
 
-            <div className="bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 flex items-center justify-between">
+            <div className="bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Descrição"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                className="w-full bg-transparent outline-none text-zinc-100 placeholder-zinc-500 font-medium"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
               />
-              <HelpCircle size={20} className="text-zinc-500" />
+              <HelpCircle size={20} className="text-[#9E9E9E]" />
             </div>
 
-            <div className="bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 flex items-center justify-between">
+            <div className="bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Notas Pessoais"
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
-                className="w-full bg-transparent outline-none text-zinc-100 placeholder-zinc-500 font-medium"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
               />
-              <HelpCircle size={20} className="text-zinc-500" />
+              <HelpCircle size={20} className="text-[#9E9E9E]" />
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <span className="text-sm font-medium text-zinc-100">Marcar como Favorito?</span>
+              <span className="text-sm font-medium text-[#2D2D2D]">Marcar como Favorito?</span>
               <button
                 onClick={() => setFavorito(!favorito)}
-                className={`w-14 h-7 rounded-full transition-all relative ${favorito ? "bg-purple-400" : "bg-zinc-700"}`}
+                className={`w-14 h-7 rounded-full transition-all relative ${favorito ? "bg-[#E5989B]" : "bg-[#F0E6E6]"}`}
               >
-                <div className={`absolute top-1 w-5 h-5 bg-[#121212] rounded-full transition-all ${favorito ? "left-8" : "left-1"}`} />
+                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${favorito ? "left-8" : "left-1 shadow-sm"}`} />
               </button>
             </div>
           </div>
         </section>
 
         {/* Precificar Section */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl relative overflow-hidden">
-          <h2 className="text-xl font-bold">Precificar</h2>
+        <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl relative overflow-hidden border border-[#F0E6E6]">
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Precificar</h2>
 
           {/* Bloqueio visual quando nome não preenchido */}
           <div
-            className="absolute inset-0 bg-[#1e1e1e]/95 z-50 flex items-center justify-center text-center p-6 transition-opacity duration-300"
+            className="absolute inset-0 bg-white/95 z-50 flex items-center justify-center text-center p-6 transition-opacity duration-300"
             style={{ opacity: nome.trim().length > 0 ? 0 : 1, pointerEvents: nome.trim().length > 0 ? "none" : "none" }}
           >
-            <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">
+            <p className="text-sm font-bold text-[#9E9E9E] uppercase tracking-widest">
               Preencha o nome do produto
             </p>
           </div>
@@ -329,32 +329,32 @@ function NovoProdutoContent() {
               <button
                 type="button"
                 onClick={() => setShowMaterialSelection(true)}
-                className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors touch-manipulation"
+                className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors touch-manipulation"
               >
                 <div className="flex items-center gap-4">
-                  <LayoutGrid size={20} className="text-purple-400" />
-                  <span className="text-zinc-100 font-medium">Adicionar materiais</span>
+                  <LayoutGrid size={20} className="text-[#E5989B]" />
+                  <span className="text-[#2D2D2D] font-medium">Adicionar materiais</span>
                 </div>
-                <ChevronRight size={20} className="text-purple-400" />
+                <ChevronRight size={20} className="text-[#E5989B]" />
               </button>
 
               {materiaisAtribuidos.length > 0 && (
                 <div className="px-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                   {materiaisAtribuidos.map((m, i) => (
-                    <div key={i} className="flex items-center justify-between bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/50">
+                    <div key={i} className="flex items-center justify-between bg-[#F8EDEB] p-3 rounded-xl border border-[#F0E6E6]">
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => setMateriaisAtribuidos(materiaisAtribuidos.filter((_, idx) => idx !== i))}
-                          className="text-red-500/50 hover:text-red-500 transition-colors"
+                          className="text-red-400/50 hover:text-red-400 transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
                         <div className="flex flex-col">
-                          <span className="text-[13px] text-zinc-100 font-medium">{m.nome}</span>
-                          <span className="text-[10px] text-zinc-500">{m.quantidade} {m.unidade}</span>
+                          <span className="text-[13px] text-[#2D2D2D] font-medium">{m.nome}</span>
+                          <span className="text-[10px] text-[#6D6D6D]">{m.quantidade} {m.unidade}</span>
                         </div>
                       </div>
-                      <span className="text-[13px] font-bold text-zinc-300">R$ {m.custo.toFixed(2)}</span>
+                      <span className="text-[13px] font-bold text-[#2D2D2D]">R$ {m.custo.toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -364,21 +364,21 @@ function NovoProdutoContent() {
             <div className="space-y-2">
               <button
                 onClick={() => setShowLaborModal(true)}
-                className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors"
+                className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <Briefcase size={20} className="text-purple-400" />
-                  <span className="text-zinc-100 font-medium">Adicionar trabalho</span>
+                  <Briefcase size={20} className="text-[#E5989B]" />
+                  <span className="text-[#2D2D2D] font-medium">Adicionar trabalho</span>
                 </div>
-                <ChevronRight size={20} className="text-purple-400" />
+                <ChevronRight size={20} className="text-[#E5989B]" />
               </button>
               {tempoTrabalho > 0 && (
                 <div className="px-6 py-1 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                    <span className="text-xs text-zinc-400 font-medium">Tempo: <span className="text-zinc-100 font-bold">{formatTime(tempoTrabalho)}</span></span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#E5989B]" />
+                    <span className="text-xs text-[#6D6D6D] font-medium">Tempo: <span className="text-[#2D2D2D] font-bold">{formatTime(tempoTrabalho)}</span></span>
                   </div>
-                  <span className="text-xs font-bold text-sky-400">R$ {laborValue.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-[#E5989B]">R$ {laborValue.toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -386,18 +386,18 @@ function NovoProdutoContent() {
             <div className="space-y-2">
               <button
                 onClick={() => setShowProfitInput(true)}
-                className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors"
+                className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <DollarSign size={20} className="text-purple-400" />
-                  <span className="text-zinc-100 font-medium">Adicionar lucro</span>
+                  <DollarSign size={20} className="text-[#E5989B]" />
+                  <span className="text-[#2D2D2D] font-medium">Adicionar lucro</span>
                 </div>
-                <ChevronRight size={20} className="text-purple-400" />
+                <ChevronRight size={20} className="text-[#E5989B]" />
               </button>
               {margemLucro > 0 && (
                 <div className="px-6 py-1 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                  <span className="text-xs text-zinc-400 font-medium">Lucro definido em <span className="text-purple-400 font-bold">{margemLucro}%</span></span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#E5989B]" />
+                  <span className="text-xs text-[#6D6D6D] font-medium">Lucro definido em <span className="text-[#E5989B] font-bold">{margemLucro}%</span></span>
                 </div>
               )}
             </div>
@@ -405,22 +405,22 @@ function NovoProdutoContent() {
             <div className="space-y-2">
               <button
                 onClick={() => setShowTagSelection(true)}
-                className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors"
+                className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <Square size={20} className="text-purple-400" />
-                  <span className="text-zinc-100 font-medium">Selecionar Etiquetas</span>
+                  <Square size={20} className="text-[#E5989B]" />
+                  <span className="text-[#2D2D2D] font-medium">Selecionar Etiquetas</span>
                 </div>
-                <ChevronRight size={20} className="text-purple-400" />
+                <ChevronRight size={20} className="text-[#E5989B]" />
               </button>
               {etiquetasSelecionadas.length > 0 && (
                 <div className="px-6 py-1 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
                   {etiquetasSelecionadas.map((tag, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 px-3 py-1 rounded-full">
-                      <span className="text-[11px] font-bold text-purple-400">{tag.nome}</span>
+                    <div key={i} className="flex items-center gap-2 bg-[#F8EDEB] border border-[#F0E6E6] px-3 py-1 rounded-full">
+                      <span className="text-[11px] font-bold text-[#E5989B]">{tag.nome}</span>
                       <button
                         onClick={() => setEtiquetasSelecionadas(etiquetasSelecionadas.filter((_, idx) => idx !== i))}
-                        className="text-purple-400/50 hover:text-purple-400 transition-colors"
+                        className="text-[#E5989B]/50 hover:text-[#E5989B] transition-colors"
                       >
                         <X size={12} />
                       </button>
@@ -434,39 +434,39 @@ function NovoProdutoContent() {
         </section>
 
         {/* Rendimento Section */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-8 shadow-xl">
+        <section className="bg-white rounded-[32px] p-6 space-y-8 shadow-xl border border-[#F0E6E6]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Rendimento</h2>
-            <button className="text-zinc-500">
+            <h2 className="text-xl font-bold text-[#2D2D2D]">Rendimento</h2>
+            <button className="text-[#9E9E9E]">
               <HelpCircle size={24} />
             </button>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-100">Rende mais de uma unidade?</span>
+            <span className="text-sm font-medium text-[#2D2D2D]">Rende mais de uma unidade?</span>
             <button
               onClick={() => setRendimentoAtivo(!rendimentoAtivo)}
-              className={`w-14 h-7 rounded-full transition-all relative ${rendimentoAtivo ? "bg-purple-400" : "bg-zinc-700"}`}
+              className={`w-14 h-7 rounded-full transition-all relative ${rendimentoAtivo ? "bg-[#E5989B]" : "bg-[#F0E6E6]"}`}
             >
-              <div className={`absolute top-1 w-5 h-5 bg-[#121212] rounded-full transition-all ${rendimentoAtivo ? "left-8" : "left-1"}`} />
+              <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${rendimentoAtivo ? "left-8" : "left-1 shadow-sm"}`} />
             </button>
           </div>
 
           {rendimentoAtivo && (
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="bg-transparent border border-zinc-700 rounded-2xl px-6 py-5">
+              <div className="bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5">
                 <input
                   type="number"
                   placeholder="0"
                   value={quantidadeRendimento}
                   onChange={(e) => setQuantidadeRendimento(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full bg-transparent outline-none text-zinc-100 placeholder-zinc-500 font-medium"
+                  className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
                 />
               </div>
 
-              <div className="bg-[#1e1e1e] p-6 rounded-3xl border border-zinc-800 shadow-inner space-y-1">
-                <p className="text-xs font-bold text-zinc-500">Preço unitário</p>
-                <p className="text-2xl font-bold text-sky-400">R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-[#F0E6E6] shadow-inner space-y-1">
+                <p className="text-xs font-bold text-[#6D6D6D]">Preço unitário</p>
+                <p className="text-2xl font-bold text-[#E5989B]">R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
             </div>
           )}
@@ -474,7 +474,7 @@ function NovoProdutoContent() {
 
         {/* Preço Final Section */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold ml-1">Preço final</h2>
+          <h2 className="text-xl font-bold ml-1 text-[#2D2D2D]">Preço final</h2>
           <PricingTable
             laborValue={laborValue}
             materialsCost={materialsCost}
@@ -493,14 +493,14 @@ function NovoProdutoContent() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`w-full py-5 bg-[#c084fc] text-zinc-900 font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-60" : "hover:bg-[#ba68c8] active:scale-[0.98]"}`}
+            className={`w-full py-5 bg-[#E5989B] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-60" : "hover:bg-[#D4A5A5] active:scale-[0.98]"}`}
           >
             {saving ? "Salvando..." : "Salvar produto"}
           </button>
           <button
             onClick={handleCancel}
             disabled={saving}
-            className="w-full py-5 border border-zinc-700 hover:bg-white/5 text-zinc-100 font-bold rounded-[20px] transition-colors"
+            className="w-full py-5 border border-[#F0E6E6] hover:bg-[#F8EDEB] text-[#2D2D2D] font-bold rounded-[20px] transition-colors"
           >
             Cancelar
           </button>
@@ -508,7 +508,7 @@ function NovoProdutoContent() {
             <button
               onClick={handleDelete}
               disabled={saving}
-              className="w-full py-5 border border-zinc-700 hover:bg-white/5 text-red-400 font-bold rounded-[20px] transition-colors"
+              className="w-full py-5 border border-[#F0E6E6] hover:bg-red-50 text-red-400 font-bold rounded-[20px] transition-colors"
             >
               Deletar produto
             </button>
@@ -629,8 +629,8 @@ function NovoProdutoContent() {
 export default function NovoProduto() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
       </div>
     }>
       <NovoProdutoContent />

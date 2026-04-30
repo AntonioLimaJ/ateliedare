@@ -65,32 +65,32 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
   );
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#121212] flex flex-col">
-      <header className="p-6">
-        <h2 className="text-xl font-bold text-white">Escolher Material</h2>
+    <div className="fixed inset-0 z-[100] bg-[#FAF7F2] flex flex-col text-[#2D2D2D]">
+      <header className="p-6 bg-white border-b border-[#F0E6E6]">
+        <h2 className="text-xl font-bold text-[#2D2D2D]">Escolher Material</h2>
       </header>
 
       <div className="px-6 space-y-6 flex-1 overflow-y-auto">
         {/* Search Bar */}
-        <div className="relative">
-          <div className="bg-transparent border border-zinc-800 rounded-2xl flex items-center px-4 py-4 focus-within:border-zinc-700 transition-colors">
-            <Search size={20} className="text-zinc-500 mr-3" />
+        <div className="relative pt-6">
+          <div className="bg-white border border-[#F0E6E6] rounded-2xl flex items-center px-4 py-4 focus-within:border-[#E5989B]/50 transition-colors shadow-sm">
+            <Search size={20} className="text-[#9E9E9E] mr-3" />
             <input
               type="text"
               placeholder="Digite alguma coisa aqui..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent w-full text-white outline-none placeholder-zinc-500"
+              className="bg-transparent w-full text-[#2D2D2D] outline-none placeholder-[#9E9E9E]"
             />
-            <Filter size={20} className="text-zinc-500 ml-3" />
+            <Filter size={20} className="text-[#9E9E9E] ml-3" />
           </div>
         </div>
 
         {/* List */}
         <div className="space-y-2">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-zinc-600 space-y-4">
-              <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center py-12 text-[#9E9E9E] space-y-4">
+              <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
               <p className="text-sm">Carregando materiais...</p>
             </div>
           ) : filteredMaterials.length > 0 ? (
@@ -98,16 +98,16 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
               <button
                 key={m.id}
                 onClick={() => onSelect(m)}
-                className="w-full flex items-center gap-4 p-2 rounded-2xl active:bg-white/5 transition-colors group text-left"
+                className="w-full flex items-center gap-4 p-2 rounded-2xl active:bg-[#F8EDEB] transition-colors group text-left"
               >
-                <div className="w-14 h-14 bg-[#1e1e1e] border border-zinc-800 rounded-xl flex items-center justify-center overflow-hidden">
+                <div className="w-14 h-14 bg-white border border-[#F0E6E6] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                   {m.imagem_url ? (
                     <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" />
                   ) : (
-                    <Lock size={20} className="text-zinc-700" />
+                    <Lock size={20} className="text-[#F0E6E6]" />
                   )}
                 </div>
-                <span className="text-lg text-zinc-100 font-medium">{m.nome}</span>
+                <span className="text-lg text-[#2D2D2D] font-medium">{m.nome}</span>
               </button>
             ))
           ) : (
@@ -118,17 +118,17 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
         </div>
       </div>
 
-      <footer className="p-8 flex justify-end items-center gap-8">
+      <footer className="p-8 flex justify-end items-center gap-8 bg-white border-t border-[#F0E6E6]">
         <button
           onClick={onAddNew}
-          className="flex items-center gap-2 text-purple-400 font-bold text-lg"
+          className="flex items-center gap-2 text-[#E5989B] font-bold text-lg"
         >
           <Plus size={20} />
           Novo
         </button>
         <button
           onClick={onClose}
-          className="text-purple-400 font-bold text-lg"
+          className="text-[#E5989B] font-bold text-lg"
         >
           Fechar
         </button>
@@ -182,71 +182,71 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
   const custo = calculateCost();
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
       <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
-        className="bg-[#1e1e1e] w-full max-w-md rounded-[32px] p-8 space-y-8 shadow-2xl"
+        className="bg-white w-full max-w-md rounded-[32px] p-8 space-y-8 shadow-2xl border border-[#F0E6E6]"
       >
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-            <Tag className="text-purple-400" size={24} />
+          <div className="w-12 h-12 bg-[#F8EDEB] rounded-xl flex items-center justify-center">
+            <Tag className="text-[#E5989B]" size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Quanto de "{material.nome}"?</h2>
-            <p className="text-sm text-zinc-400">Preço base: R$ {material.preco_unitario?.toFixed(2)} / {material.tipo_medida === "Comprimento" ? "m" : material.tipo_medida === "Peso (kg)" ? "kg" : material.tipo_medida === "Volume (l)" ? "litro" : material.tipo_medida === "Área" ? "m²" : "un"}</p>
+            <h2 className="text-xl font-bold text-[#2D2D2D]">Quanto de "{material.nome}"?</h2>
+            <p className="text-sm text-[#6D6D6D]">Preço base: R$ {material.preco_unitario?.toFixed(2)} / {material.tipo_medida === "Comprimento" ? "m" : material.tipo_medida === "Peso (kg)" ? "kg" : material.tipo_medida === "Volume (l)" ? "litro" : material.tipo_medida === "Área" ? "m²" : "un"}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
               Quantidade
             </label>
-            <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
+            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
               <input
                 type="number"
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
                 placeholder="0"
-                className="bg-transparent w-full text-white font-bold outline-none"
+                className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
               />
             </div>
           </div>
 
           <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
               Unidade
             </label>
             <select
               value={unidade}
               onChange={(e) => setUnidade(e.target.value)}
-              className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 w-full text-white font-medium outline-none appearance-none"
+              className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
             >
               {options.map(opt => (
-                <option key={opt} value={opt} className="bg-[#1e1e1e]">{opt}</option>
+                <option key={opt} value={opt} className="bg-white">{opt}</option>
               ))}
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <ChevronDown size={16} className="text-zinc-500" />
+              <ChevronDown size={16} className="text-[#9E9E9E]" />
             </div>
           </div>
         </div>
 
-        <div className="bg-[#121212] rounded-2xl p-6 space-y-1 shadow-inner text-center">
-          <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Custo para este produto</p>
-          <p className="text-3xl font-bold text-sky-400">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center">
+          <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Custo para este produto</p>
+          <p className="text-3xl font-bold text-[#E5989B]">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
         </div>
 
         <div className="space-y-3">
           <button
             onClick={() => onConfirm({ materialId: material.id, nome: material.nome, quantidade: Number(quantidade), unidade, custo })}
             disabled={!quantidade || Number(quantidade) <= 0}
-            className="w-full py-5 bg-purple-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
+            className="w-full py-5 bg-[#E5989B] disabled:bg-[#F0E6E6] disabled:text-[#9E9E9E] text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
           >
             Adicionar ao produto
           </button>
-          <button onClick={onClose} className="w-full py-4 text-zinc-500 font-bold">
+          <button onClick={onClose} className="w-full py-4 text-[#9E9E9E] font-bold">
             Cancelar
           </button>
         </div>
@@ -358,8 +358,8 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
   }
 
   return (
-    <div className="fixed inset-0 z-[110] bg-[#121212] flex flex-col overflow-y-auto">
-      <header className="sticky top-0 z-50 bg-[#c084fc] px-4 py-4 flex items-center justify-between shadow-lg">
+    <div className="fixed inset-0 z-[110] bg-[#FAF7F2] flex flex-col overflow-y-auto">
+      <header className="sticky top-0 z-50 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-4">
           <button onClick={onClose} className="p-2 -ml-2" disabled={saving}>
             <ChevronLeft size={24} />
@@ -377,7 +377,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
       <main className="p-4 space-y-6 pb-32">
         {/* Image Section */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 shadow-xl">
+        <section className="bg-white rounded-[32px] p-6 shadow-xl border border-[#F0E6E6]">
           <ImageUpload
             onImageChange={(img, isNew) => {
               setImagem(img);
@@ -388,63 +388,63 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
         </section>
 
         {/* Material Group */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
-          <h2 className="text-xl font-bold">Material</h2>
+        <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Material</h2>
 
           <div className="space-y-6">
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
                 Nome do material
               </label>
-              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
+              <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
                 <input
                   type="text"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="bg-transparent w-full text-white font-medium outline-none"
+                  className="bg-transparent w-full text-[#2D2D2D] font-medium outline-none"
                 />
               </div>
             </div>
 
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
                 Observações (opcional)
               </label>
-              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
+              <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
                 <input
                   type="text"
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
-                  className="bg-transparent w-full text-white font-medium outline-none"
+                  className="bg-transparent w-full text-[#2D2D2D] font-medium outline-none"
                 />
               </div>
             </div>
 
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
                 Tipo de medida
               </label>
               <select
                 value={tipoMedida}
                 onChange={(e) => setTipoMedida(e.target.value)}
-                className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 w-full text-white font-medium outline-none appearance-none"
+                className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
               >
-                <option value="Comprimento" className="bg-[#1e1e1e]">Comprimento</option>
-                <option value="Unidade" className="bg-[#1e1e1e]">Unidade</option>
-                <option value="Área" className="bg-[#1e1e1e]">Área</option>
-                <option value="Peso (kg)" className="bg-[#1e1e1e]">Peso (kg)</option>
-                <option value="Volume (l)" className="bg-[#1e1e1e]">Volume (l)</option>
+                <option value="Comprimento" className="bg-white">Comprimento</option>
+                <option value="Unidade" className="bg-white">Unidade</option>
+                <option value="Área" className="bg-white">Área</option>
+                <option value="Peso (kg)" className="bg-white">Peso (kg)</option>
+                <option value="Volume (l)" className="bg-white">Volume (l)</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <ChevronDown size={20} className="text-zinc-500" />
+                <ChevronDown size={20} className="text-[#9E9E9E]" />
               </div>
             </div>
 
-            <div className="bg-sky-900/20 border border-sky-500/20 rounded-xl p-4 flex gap-4">
+            <div className="bg-[#F8EDEB] border border-[#F0E6E6] rounded-xl p-4 flex gap-4">
               <div className="pt-1">
-                <Info size={20} className="text-sky-400" />
+                <Info size={20} className="text-[#E5989B]" />
               </div>
-              <p className="text-xs font-medium text-sky-400/80 leading-relaxed">
+              <p className="text-xs font-medium text-[#E5989B] leading-relaxed">
                 Medida linear em centímetros (cm). Serve para fita, zíper, linha, etc.
               </p>
             </div>
@@ -452,49 +452,49 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
         </section>
 
         {/* Preço Group */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
-          <h2 className="text-xl font-bold">Preço</h2>
+        <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Preço</h2>
 
           <div className="space-y-4">
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
                 Preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}
               </label>
-              <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center">
-                <span className="text-zinc-500 mr-1">R$</span>
+              <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center">
+                <span className="text-[#9E9E9E] mr-1">R$</span>
                 <input
                   type="number"
                   value={preco}
                   onChange={(e) => setPreco(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="0"
-                  className="bg-transparent w-full text-white font-bold outline-none"
+                  className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
                 />
               </div>
             </div>
 
             <button
               onClick={() => setShowCalculator(true)}
-              className="w-full flex items-center justify-between bg-transparent border border-zinc-700 rounded-2xl px-6 py-5 group active:bg-white/5 transition-colors"
+              className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
             >
               <div className="flex items-center gap-4">
-                <Tag size={20} className="text-purple-400" />
-                <span className="text-zinc-100 font-medium">Descobrir preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}</span>
+                <Tag size={20} className="text-[#E5989B]" />
+                <span className="text-[#2D2D2D] font-medium">Descobrir preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}</span>
               </div>
-              <ChevronRight size={20} className="text-purple-400" />
+              <ChevronRight size={20} className="text-[#E5989B]" />
             </button>
           </div>
         </section>
 
         {/* Fornecedor Group */}
-        <section className="bg-[#1e1e1e] rounded-[32px] p-6 space-y-6 shadow-xl">
-          <h2 className="text-xl font-bold text-zinc-800">Fornecedor</h2>
-          <div className="relative opacity-50 pointer-events-none">
-            <div className="bg-transparent border border-zinc-800 rounded-xl px-4 py-4 flex items-center justify-between">
-              <span className="text-zinc-600 font-medium">Clique para escolher</span>
-              <ChevronDown size={20} className="text-zinc-800" />
+        <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
+          <h2 className="text-xl font-bold text-[#9E9E9E]">Fornecedor</h2>
+          <div className="relative opacity-30 pointer-events-none">
+            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center justify-between">
+              <span className="text-[#9E9E9E] font-medium">Clique para escolher</span>
+              <ChevronDown size={20} className="text-[#9E9E9E]" />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Lock size={32} className="text-white" />
+              <Lock size={32} className="text-[#9E9E9E]" />
             </div>
           </div>
         </section>
@@ -504,14 +504,14 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`w-full py-5 bg-[#c084fc] text-zinc-900 font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
+            className={`w-full py-5 bg-[#E5989B] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>
           <button
             onClick={onClose}
             disabled={saving}
-            className="w-full py-5 border border-zinc-700 text-zinc-100 font-bold rounded-[20px] active:bg-white/5 transition-colors"
+            className="w-full py-5 border border-[#F0E6E6] text-[#2D2D2D] font-bold rounded-[20px] active:bg-[#F8EDEB] transition-colors"
           >
             Cancelar
           </button>
@@ -519,7 +519,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             <button
               onClick={onDelete}
               disabled={saving}
-              className="w-full py-5 border border-red-500 text-red-500 font-bold rounded-[20px] active:bg-red-900/10 transition-colors"
+              className="w-full py-5 border border-red-200 text-red-400 font-bold rounded-[20px] active:bg-red-50 transition-colors"
             >
               Deletar
             </button>
@@ -591,66 +591,66 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
       <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
-        className="bg-[#1e1e1e] w-full rounded-[32px] p-8 space-y-8 shadow-2xl"
+        className="bg-white w-full rounded-[32px] p-8 space-y-8 shadow-2xl border border-[#F0E6E6]"
       >
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-white">Calcular preço por {tipoMedida === "Unidade" ? "unidade" : tipoMedida === "Comprimento" ? "m" : tipoMedida.split(" ")[1]?.replace("(", "").replace(")", "") || "un"}</h2>
-          <p className="text-sm text-zinc-400">Preencha os campos abaixo</p>
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Calcular preço por {tipoMedida === "Unidade" ? "unidade" : tipoMedida === "Comprimento" ? "m" : tipoMedida.split(" ")[1]?.replace("(", "").replace(")", "") || "un"}</h2>
+          <p className="text-sm text-[#6D6D6D]">Preencha os campos abaixo</p>
         </div>
 
         <div className="space-y-4">
           <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
               Você compra em
             </label>
             <select
               value={compraEm}
               onChange={(e) => setCompraEm(e.target.value)}
-              className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 w-full text-white font-medium outline-none appearance-none"
+              className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
             >
               {options.map(opt => (
-                <option key={opt} value={opt} className="bg-[#1e1e1e]">{opt}</option>
+                <option key={opt} value={opt} className="bg-white">{opt}</option>
               ))}
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <ChevronDown size={20} className="text-zinc-500" />
+              <ChevronDown size={20} className="text-[#9E9E9E]" />
             </div>
           </div>
 
           <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
               Quantidade
             </label>
-            <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4">
+            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
               <input
                 type="number"
                 placeholder="Ex: 50"
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
-                className="bg-transparent w-full text-white outline-none font-medium"
+                className="bg-transparent w-full text-[#2D2D2D] outline-none font-medium"
               />
             </div>
           </div>
 
           <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-[#1e1e1e] px-1 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
               Quanto você paga?
             </label>
-            <div className="bg-transparent border border-zinc-700 rounded-xl px-4 py-4 flex items-center">
-              <span className="text-zinc-500 mr-1">R$</span>
+            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center">
+              <span className="text-[#9E9E9E] mr-1">R$</span>
               <input
                 type="number"
                 placeholder="0,00"
                 value={precoPago}
                 onChange={(e) => setPrecoPago(e.target.value === "" ? "" : Number(e.target.value))}
-                className="bg-transparent w-full text-white font-bold outline-none"
+                className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
               />
             </div>
           </div>
 
-          <div className="bg-[#121212] rounded-2xl p-6 space-y-1 shadow-inner">
-            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Preço final calculado</p>
-            <p className="text-2xl font-bold text-sky-400">R$ {canUse ? result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00"}</p>
+          <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center">
+            <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Preço final calculado</p>
+            <p className="text-2xl font-bold text-[#E5989B]">R$ {canUse ? result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00"}</p>
           </div>
         </div>
 
@@ -658,13 +658,13 @@ function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () =
           <button
             onClick={() => onUse(result)}
             disabled={!canUse}
-            className={`w-full py-4 font-bold rounded-2xl transition-all ${canUse ? "bg-purple-500 text-white shadow-lg active:scale-[0.98]" : "bg-zinc-800 text-zinc-600 pointer-events-none"}`}
+            className={`w-full py-4 font-bold rounded-2xl transition-all ${canUse ? "bg-[#E5989B] text-white shadow-lg active:scale-[0.98]" : "bg-[#F0E6E6] text-[#9E9E9E] pointer-events-none"}`}
           >
             Usar esse valor
           </button>
           <button
             onClick={onClose}
-            className="w-full py-4 border border-zinc-700 text-zinc-300 font-bold rounded-2xl active:bg-white/5 transition-colors"
+            className="w-full py-4 border border-[#F0E6E6] text-[#6D6D6D] font-bold rounded-2xl active:bg-[#F8EDEB] transition-colors"
           >
             Cancelar
           </button>

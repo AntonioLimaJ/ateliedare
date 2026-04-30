@@ -147,13 +147,15 @@ interface MaterialUsageModalProps {
 export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsageModalProps) {
   const [unidade, setUnidade] = useState("");
   const [quantidade, setQuantidade] = useState<number | "">("");
+  const [largura, setLargura] = useState<number | "">("");
+  const [comprimento, setComprimento] = useState<number | "">("");
 
   // Options based on material.tipo_medida
   const optionsMap: Record<string, string[]> = {
     "Comprimento": ["cm", "m"],
     "Peso (kg)": ["g", "kg"],
     "Volume (l)": ["ml", "l"],
-    "Área": ["cm²", "m²"],
+    "Área": ["cm", "m"],
     "Unidade": ["Unidade"]
   };
 
@@ -166,16 +168,26 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
   }, [options, unidade]);
 
   const calculateCost = () => {
-    if (!quantidade) return 0;
-
-    let baseQty = Number(quantidade);
     const precoBase = material.preco_unitario || 0;
+
+    if (material.tipo_medida === "Área") {
+      if (!largura || !comprimento) return 0;
+      let areaM2 = 0;
+      if (unidade === "cm") {
+        areaM2 = (Number(largura) * Number(comprimento)) / 10000;
+      } else {
+        areaM2 = Number(largura) * Number(comprimento);
+      }
+      return areaM2 * precoBase;
+    }
+
+    if (!quantidade) return 0;
+    let baseQty = Number(quantidade);
 
     // Convert to base unit price reference
     if (unidade === "cm") baseQty = baseQty / 100;
     if (unidade === "g") baseQty = baseQty / 1000;
     if (unidade === "ml") baseQty = baseQty / 1000;
-    if (unidade === "cm²") baseQty = baseQty / 10000;
 
     return baseQty * precoBase;
   };
@@ -199,39 +211,93 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-              Quantidade
-            </label>
-            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
-              <input
-                type="number"
-                value={quantidade}
-                onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
-                placeholder="0"
-                className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
-              />
+        <div className="space-y-4">
+          {material.tipo_medida === "Área" ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  Largura ({unidade})
+                </label>
+                <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
+                  <input
+                    type="number"
+                    value={largura}
+                    onChange={(e) => setLargura(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder="0"
+                    className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
+                  />
+                </div>
+              </div>
+              <div className="relative">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  Comprimento ({unidade})
+                </label>
+                <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
+                  <input
+                    type="number"
+                    value={comprimento}
+                    onChange={(e) => setComprimento(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder="0"
+                    className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  Quantidade
+                </label>
+                <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
+                  <input
+                    type="number"
+                    value={quantidade}
+                    onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder="0"
+                    className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
+                  />
+                </div>
+              </div>
 
-          <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-              Unidade
-            </label>
-            <select
-              value={unidade}
-              onChange={(e) => setUnidade(e.target.value)}
-              className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
-            >
-              {options.map(opt => (
-                <option key={opt} value={opt} className="bg-white">{opt}</option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <ChevronDown size={16} className="text-[#9E9E9E]" />
+              <div className="relative">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  Unidade
+                </label>
+                <select
+                  value={unidade}
+                  onChange={(e) => setUnidade(e.target.value)}
+                  className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
+                >
+                  {options.map(opt => (
+                    <option key={opt} value={opt} className="bg-white">{opt}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <ChevronDown size={16} className="text-[#9E9E9E]" />
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {material.tipo_medida === "Área" && (
+            <div className="relative">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                Unidade de medida
+              </label>
+              <select
+                value={unidade}
+                onChange={(e) => setUnidade(e.target.value)}
+                className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
+              >
+                <option value="cm">Centímetros (cm)</option>
+                <option value="m">Metros (m)</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown size={16} className="text-[#9E9E9E]" />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center">
@@ -241,8 +307,24 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
         <div className="space-y-3">
           <button
-            onClick={() => onConfirm({ materialId: material.id, nome: material.nome, quantidade: Number(quantidade), unidade, custo })}
-            disabled={!quantidade || Number(quantidade) <= 0}
+            onClick={() => {
+              let finalQty = Number(quantidade);
+              if (material.tipo_medida === "Área") {
+                if (unidade === "cm") {
+                  finalQty = (Number(largura) * Number(comprimento)) / 10000;
+                } else {
+                  finalQty = Number(largura) * Number(comprimento);
+                }
+              }
+              onConfirm({ 
+                materialId: material.id, 
+                nome: material.nome, 
+                quantidade: finalQty, 
+                unidade: material.tipo_medida === "Área" ? "m²" : unidade, 
+                custo 
+              });
+            }}
+            disabled={material.tipo_medida === "Área" ? (!largura || !comprimento) : (!quantidade || Number(quantidade) <= 0)}
             className="w-full py-5 bg-[#E5989B] disabled:bg-[#F0E6E6] disabled:text-[#9E9E9E] text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
           >
             Adicionar ao produto
@@ -264,17 +346,62 @@ interface MaterialFormModalProps {
 
 export function MaterialFormModal({ onClose, onSave, material }: MaterialFormModalProps) {
   const isEdit = !!material;
-  const [showCalculator, setShowCalculator] = useState(false);
   const [nome, setNome] = useState(material?.nome || "");
   const [observacoes, setObservacoes] = useState(material?.observacoes || "");
   const [tipoMedida, setTipoMedida] = useState(material?.tipo_medida || "Comprimento");
   const [preco, setPreco] = useState<number | "">(material?.preco_unitario ?? "");
+  
+  // New simplified calculator states
+  const [buyQty, setBuyQty] = useState<number | "">("");
+  const [buyPrice, setBuyPrice] = useState<number | "">("");
+  const [buyWidth, setBuyWidth] = useState<number | "">("");
+  const [buyLength, setBuyLength] = useState<number | "">("");
+  const [buyUnit, setBuyUnit] = useState("");
+
   const [imagem, setImagem] = useState<string | null>(material?.imagem_url || null);
   const [imagemNova, setImagemNova] = useState(false);
   const originalImageRef = useRef<string | null>(material?.imagem_url || null);
   const [saving, setSaving] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [dependentItems, setDependentItems] = useState<string[]>([]);
+
+  // Update calculated price
+  useEffect(() => {
+    if (buyPrice === "" || buyPrice === 0) return;
+
+    if (tipoMedida === "Área") {
+      if (buyWidth && buyLength) {
+        let areaM2 = 0;
+        if (buyUnit === "cm") {
+          areaM2 = (Number(buyWidth) * Number(buyLength)) / 10000;
+        } else {
+          areaM2 = Number(buyWidth) * Number(buyLength);
+        }
+        if (areaM2 > 0) setPreco(Number(buyPrice) / areaM2);
+      }
+    } else {
+      if (buyQty && buyQty > 0) {
+        let baseQty = Number(buyQty);
+        if (buyUnit === "cm") baseQty = baseQty / 100;
+        if (buyUnit === "g") baseQty = baseQty / 1000;
+        if (buyUnit === "ml") baseQty = baseQty / 1000;
+        
+        setPreco(Number(buyPrice) / baseQty);
+      }
+    }
+  }, [buyPrice, buyQty, buyWidth, buyLength, buyUnit, tipoMedida]);
+
+  useEffect(() => {
+    // Set default unit when tipoMedida changes
+    const defaults: Record<string, string> = {
+      "Comprimento": "m",
+      "Peso (kg)": "kg",
+      "Volume (l)": "l",
+      "Área": "cm",
+      "Unidade": "un"
+    };
+    setBuyUnit(defaults[tipoMedida] || "un");
+  }, [tipoMedida]);
 
   const uploadImage = async (base64: string): Promise<string> => {
     const BUCKET = "precificacao";
@@ -497,7 +624,11 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                 <Info size={20} className="text-[#E5989B]" />
               </div>
               <p className="text-xs font-medium text-[#E5989B] leading-relaxed">
-                Medida linear em centímetros (cm). Serve para fita, zíper, linha, etc.
+                {tipoMedida === "Comprimento" ? "Medida linear em metros (m). Serve para fita, zíper, linha, etc." :
+                 tipoMedida === "Área" ? "Medida de superfície em metros quadrados (m²). Serve para tecidos, mantas, etc." :
+                 tipoMedida === "Peso (kg)" ? "Medida de peso em quilos (kg). Serve para enchimento, pérolas, etc." :
+                 tipoMedida === "Volume (l)" ? "Medida de volume em litros (l). Serve para tintas, colas, etc." :
+                 "Medida por unidade simples."}
               </p>
             </div>
           </div>
@@ -505,35 +636,137 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
         {/* Preço Group */}
         <section className="bg-white rounded-[32px] p-6 space-y-6 shadow-xl border border-[#F0E6E6]">
-          <h2 className="text-xl font-bold text-[#2D2D2D]">Preço</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#2D2D2D]">Quanto você pagou?</h2>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {tipoMedida === "Área" ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                    Largura ({buyUnit})
+                  </label>
+                  <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
+                    <input
+                      type="number"
+                      value={buyWidth}
+                      onChange={(e) => setBuyWidth(e.target.value === "" ? "" : Number(e.target.value))}
+                      placeholder="0"
+                      className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                    Comprimento ({buyUnit})
+                  </label>
+                  <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
+                    <input
+                      type="number"
+                      value={buyLength}
+                      onChange={(e) => setBuyLength(e.target.value === "" ? "" : Number(e.target.value))}
+                      placeholder="0"
+                      className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                    Quantidade comprada
+                  </label>
+                  <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
+                    <input
+                      type="number"
+                      value={buyQty}
+                      onChange={(e) => setBuyQty(e.target.value === "" ? "" : Number(e.target.value))}
+                      placeholder="0"
+                      className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                    Unidade
+                  </label>
+                  <select
+                    value={buyUnit}
+                    onChange={(e) => setBuyUnit(e.target.value)}
+                    className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
+                  >
+                    {tipoMedida === "Comprimento" && (
+                      <>
+                        <option value="cm">cm</option>
+                        <option value="m">m</option>
+                      </>
+                    )}
+                    {tipoMedida === "Peso (kg)" && (
+                      <>
+                        <option value="g">g</option>
+                        <option value="kg">kg</option>
+                      </>
+                    )}
+                    {tipoMedida === "Volume (l)" && (
+                      <>
+                        <option value="ml">ml</option>
+                        <option value="l">l</option>
+                      </>
+                    )}
+                    {tipoMedida === "Unidade" && <option value="un">un</option>}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown size={16} className="text-[#9E9E9E]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {tipoMedida === "Área" && (
+              <div className="relative">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  Unidade de medida
+                </label>
+                <select
+                  value={buyUnit}
+                  onChange={(e) => setBuyUnit(e.target.value)}
+                  className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
+                >
+                  <option value="cm">Centímetros (cm)</option>
+                  <option value="m">Metros (m)</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <ChevronDown size={16} className="text-[#9E9E9E]" />
+                </div>
+              </div>
+            )}
+
             <div className="relative">
               <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-                Preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}
+                Preço total pago
               </label>
               <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center">
                 <span className="text-[#9E9E9E] mr-1">R$</span>
                 <input
                   type="number"
-                  value={preco}
-                  onChange={(e) => setPreco(e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="0"
+                  value={buyPrice}
+                  onChange={(e) => setBuyPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="0,00"
                   className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
                 />
               </div>
             </div>
 
-            <button
-              onClick={() => setShowCalculator(true)}
-              className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <Tag size={20} className="text-[#E5989B]" />
-                <span className="text-[#2D2D2D] font-medium">Descobrir preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}</span>
-              </div>
-              <ChevronRight size={20} className="text-[#E5989B]" />
-            </button>
+            <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center border border-[#F0E6E6]">
+              <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">
+                Preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}
+              </p>
+              <p className="text-3xl font-bold text-[#E5989B]">
+                R$ {(preco || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
           </div>
         </section>
 
@@ -580,150 +813,6 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
           isLoading={saving}
         />
       </main>
-
-      {/* Calculator Modal */}
-      <AnimatePresence>
-        {showCalculator && (
-          <MaterialCalculatorModal
-            tipoMedida={tipoMedida}
-            onClose={() => setShowCalculator(false)}
-            onUse={(val) => {
-              setPreco(val);
-              setShowCalculator(false);
-            }}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function MaterialCalculatorModal({ onClose, onUse, tipoMedida }: { onClose: () => void, onUse: (val: number) => void, tipoMedida: string }) {
-  const [compraEm, setCompraEm] = useState("");
-  const [quantidade, setQuantidade] = useState<number | "">("");
-  const [precoPago, setPrecoPago] = useState<number | "">("");
-
-  // Define options based on tipoMedida
-  const optionsMap: Record<string, string[]> = {
-    "Comprimento": ["Centímetros (cm)", "Metros (m)"],
-    "Peso (kg)": ["Gramas (g)", "Quilos (kg)"],
-    "Volume (l)": ["Mililitros (ml)", "Litros (l)"],
-    "Área": ["Centímetros quadrados (cm²)", "Metros quadrados (m²)"],
-    "Unidade": ["Unidade"]
-  };
-
-  const options = optionsMap[tipoMedida] || ["Unidade"];
-
-  // Default selection
-  useEffect(() => {
-    if (!compraEm && options.length > 0) {
-      setCompraEm(options[0]);
-    }
-  }, [options, compraEm]);
-
-  const calculateResult = () => {
-    if (!quantidade || !precoPago) return 0;
-
-    let baseQty = Number(quantidade);
-
-    // Convert to base unit (m, kg, l, etc)
-    if (compraEm.includes("(cm)") || compraEm.includes("(g)") || compraEm.includes("(ml)")) {
-      baseQty = baseQty / 1000;
-      if (compraEm.includes("(cm)")) baseQty = Number(quantidade) / 100; // cm to m is 100
-    } else if (compraEm.includes("(cm²)")) {
-      baseQty = baseQty / 10000;
-    }
-
-    return Number(precoPago) / baseQty;
-  };
-
-  const result = calculateResult();
-  const canUse = result > 0 && result !== Infinity;
-
-  return (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        className="bg-white w-full rounded-[32px] p-8 space-y-8 shadow-2xl border border-[#F0E6E6]"
-      >
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold text-[#2D2D2D]">Calcular preço por {tipoMedida === "Unidade" ? "unidade" : tipoMedida === "Comprimento" ? "m" : tipoMedida.split(" ")[1]?.replace("(", "").replace(")", "") || "un"}</h2>
-          <p className="text-sm text-[#6D6D6D]">Preencha os campos abaixo</p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-              Você compra em
-            </label>
-            <select
-              value={compraEm}
-              onChange={(e) => setCompraEm(e.target.value)}
-              className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
-            >
-              {options.map(opt => (
-                <option key={opt} value={opt} className="bg-white">{opt}</option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <ChevronDown size={20} className="text-[#9E9E9E]" />
-            </div>
-          </div>
-
-          <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-              Quantidade
-            </label>
-            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
-              <input
-                type="number"
-                placeholder="Ex: 50"
-                value={quantidade}
-                onChange={(e) => setQuantidade(e.target.value === "" ? "" : Number(e.target.value))}
-                className="bg-transparent w-full text-[#2D2D2D] outline-none font-medium"
-              />
-            </div>
-          </div>
-
-          <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-              Quanto você paga?
-            </label>
-            <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center">
-              <span className="text-[#9E9E9E] mr-1">R$</span>
-              <input
-                type="number"
-                placeholder="0,00"
-                value={precoPago}
-                onChange={(e) => setPrecoPago(e.target.value === "" ? "" : Number(e.target.value))}
-                className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center">
-            <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Preço final calculado</p>
-            <p className="text-2xl font-bold text-[#E5989B]">R$ {canUse ? result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00"}</p>
-          </div>
-        </div>
-
-        <div className="space-y-3 pt-4">
-          <button
-            onClick={() => onUse(result)}
-            disabled={!canUse}
-            className={`w-full py-4 font-bold rounded-2xl transition-all ${canUse ? "bg-[#E5989B] text-white shadow-lg active:scale-[0.98]" : "bg-[#F0E6E6] text-[#9E9E9E] pointer-events-none"}`}
-          >
-            Usar esse valor
-          </button>
-          <button
-            onClick={onClose}
-            className="w-full py-4 border border-[#F0E6E6] text-[#6D6D6D] font-bold rounded-2xl active:bg-[#F8EDEB] transition-colors"
-          >
-            Cancelar
-          </button>
-        </div>
-      </motion.div>
     </div>
   );
 }

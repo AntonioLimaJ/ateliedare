@@ -26,7 +26,7 @@ export function ImageUpload({ onImageChange, initialImage }: ImageUploadProps) {
       const img = new (window as any).Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX = 1200; // Increased for better quality
+        const MAX = 2500; // Aumentado para suportar fotos de alta resolução
         let { width, height } = img;
         if (width > height) {
           if (width > MAX) { height *= MAX / width; width = MAX; }

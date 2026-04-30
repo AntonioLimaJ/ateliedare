@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, X, Plus, Image as ImageIcon } from "lucide-react";
+import { Camera, X, Plus, Image as ImageIcon, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { processImageProfessional } from "@/lib/image-processor";
 
 interface ImageUploadProps {
   onImageChange: (image: string | null, isFile?: boolean) => void;
@@ -11,6 +12,7 @@ interface ImageUploadProps {
 
 export function ImageUpload({ onImageChange, initialImage }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(initialImage || null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -24,7 +26,7 @@ export function ImageUpload({ onImageChange, initialImage }: ImageUploadProps) {
       const img = new (window as any).Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX = 800;
+        const MAX = 1200; // Increased for better quality
         let { width, height } = img;
         if (width > height) {
           if (width > MAX) { height *= MAX / width; width = MAX; }
@@ -51,6 +53,22 @@ export function ImageUpload({ onImageChange, initialImage }: ImageUploadProps) {
     reader.readAsDataURL(file);
   };
 
+  const handleProfessionalTreatment = async () => {
+    if (!preview || isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      const processedImage = await processImageProfessional(preview);
+      setPreview(processedImage);
+      onImageChange(processedImage, true);
+    } catch (error) {
+      console.error("Erro ao tratar imagem:", error);
+      alert("Não foi possível remover o fundo. Tente novamente.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
@@ -65,35 +83,56 @@ export function ImageUpload({ onImageChange, initialImage }: ImageUploadProps) {
   return (
     <div className="w-full">
       {preview ? (
-        <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-white border border-[#F0E6E6] shadow-inner">
+        <div className="relative w-full aspect-square max-w-[320px] mx-auto rounded-3xl overflow-hidden bg-white border border-[#F0E6E6] shadow-xl group">
           <Image
             src={preview}
             alt="Preview"
             fill
-            className="object-cover"
+            className={`object-contain transition-all duration-500 ${isProcessing ? 'scale-90 blur-sm opacity-50' : 'scale-100 opacity-100'}`}
             unoptimized={preview.startsWith("data:")}
           />
 
+          {isProcessing && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/20 backdrop-blur-[2px] z-10">
+              <Loader2 className="w-8 h-8 text-[#E5989B] animate-spin" />
+              <p className="text-[10px] font-bold text-[#E5989B] mt-2 uppercase tracking-tighter">Removendo fundo...</p>
+            </div>
+          )}
+
           <button
             onClick={handleRemove}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-[#E5989B] shadow-lg"
+            disabled={isProcessing}
+            className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#E5989B] shadow-md active:scale-90 transition-transform z-20"
           >
-            <X size={20} />
+            <X size={16} />
           </button>
 
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3">
+          {/* Professional Treatment Button */}
+          {!isProcessing && (
+            <button
+              onClick={handleProfessionalTreatment}
+              className="absolute top-3 left-3 flex items-center gap-1.5 bg-[#E5989B] text-white text-[10px] font-bold px-3 py-2 rounded-full shadow-lg hover:bg-[#D4A5A5] active:scale-95 transition-all z-20 animate-pulse"
+            >
+              <Sparkles size={12} />
+              PROFISSIONAL
+            </button>
+          )}
+
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
             <button
               onClick={() => galleryRef.current?.click()}
-              className="flex items-center gap-2 bg-white/80 backdrop-blur text-[#E5989B] text-xs font-bold px-4 py-2 rounded-full"
+              disabled={isProcessing}
+              className="flex items-center gap-1.5 bg-white/90 backdrop-blur text-[#6D6D6D] text-[10px] font-bold px-3 py-2 rounded-full shadow-md"
             >
-              <ImageIcon size={14} />
+              <ImageIcon size={12} />
               Galeria
             </button>
             <button
               onClick={() => cameraRef.current?.click()}
-              className="flex items-center gap-2 bg-white/80 backdrop-blur text-[#E5989B] text-xs font-bold px-4 py-2 rounded-full"
+              disabled={isProcessing}
+              className="flex items-center gap-1.5 bg-white/90 backdrop-blur text-[#6D6D6D] text-[10px] font-bold px-3 py-2 rounded-full shadow-md"
             >
-              <Camera size={14} />
+              <Camera size={12} />
               Câmera
             </button>
           </div>

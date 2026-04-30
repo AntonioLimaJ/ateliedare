@@ -60,9 +60,15 @@ function NovoProdutoContent() {
   // Global config (salary/taxes)
   const { config } = useConfiguracoes();
 
-  // Load product for editing
+  // Materials, Labor & Tags State
+  const [materiaisAtribuidos, setMateriaisAtribuidos] = useState<any[]>([]);
+  const [tempoTrabalho, setTempoTrabalho] = useState(0); // in seconds
+  const [etiquetasSelecionadas, setEtiquetasSelecionadas] = useState<any[]>([]);
+
   useEffect(() => {
     if (!editId) return;
+    
+    // Buscar dados básicos do produto
     supabase.from("produtos").select("*").eq("id", editId).single().then(({ data }) => {
       if (!data) return;
       if (data.nome) setNome(data.nome);
@@ -84,12 +90,23 @@ function NovoProdutoContent() {
         setPrecoPersonalizado(data.preco_final);
       }
     });
-  }, [editId]);
 
-  // Materials, Labor & Tags State
-  const [materiaisAtribuidos, setMateriaisAtribuidos] = useState<any[]>([]);
-  const [tempoTrabalho, setTempoTrabalho] = useState(0); // in seconds
-  const [etiquetasSelecionadas, setEtiquetasSelecionadas] = useState<any[]>([]);
+    // Buscar materiais do produto
+    supabase.from("produto_materiais")
+      .select("*")
+      .eq("produto_id", editId)
+      .then(({ data }) => {
+        if (data) {
+          setMateriaisAtribuidos(data.map(m => ({
+            materialId: m.material_id,
+            nome: m.nome,
+            quantidade: m.quantidade,
+            unidade: m.unidade,
+            custo: m.custo
+          })));
+        }
+      });
+  }, [editId]);
 
   // Calculations (using global config)
   const hourlyRate = calcularCustoHora(config);

@@ -141,9 +141,9 @@ export default function PrecificacaoDashboard() {
             </div>
           )}
         </div>
-        
+
         {activeTab !== "custos" && (
-          <button 
+          <button
             onClick={() => {
               setIsSearching(!isSearching);
               if (isSearching) setSearchQuery("");
@@ -203,7 +203,7 @@ export default function PrecificacaoDashboard() {
                 produtosFiltrados.map((p) => (
                   <Link
                     key={p.id}
-                    href={`/precificacao/detalhes/${p.id}`}
+                    href={`/precificacao/novo?id=${p.id}`}
                     className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] hover:border-[#E5989B]/30 transition-all active:scale-[0.99] shadow-sm relative overflow-hidden"
                   >
                     <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 relative">

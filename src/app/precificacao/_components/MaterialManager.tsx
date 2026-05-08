@@ -152,10 +152,10 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
   // Options based on material.tipo_medida
   const optionsMap: Record<string, string[]> = {
-    "Comprimento": ["cm", "m"],
-    "Peso (kg)": ["g", "kg"],
-    "Volume (l)": ["ml", "l"],
-    "Área": ["cm", "m"],
+    "Comprimento": ["m", "cm"],
+    "Peso (kg)": ["kg", "g"],
+    "Volume (l)": ["l", "ml"],
+    "Área": ["m", "cm"],
     "Unidade": ["Unidade"]
   };
 
@@ -290,8 +290,8 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
                 onChange={(e) => setUnidade(e.target.value)}
                 className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
               >
-                <option value="cm">Centímetros (cm)</option>
                 <option value="m">Metros (m)</option>
+                <option value="cm">Centímetros (cm)</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <ChevronDown size={16} className="text-[#9E9E9E]" />
@@ -302,7 +302,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
         <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center">
           <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Custo para este produto</p>
-          <p className="text-3xl font-bold text-[#E5989B]">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-3xl font-bold text-[#E5989B]">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
         </div>
 
         <div className="space-y-3">
@@ -348,7 +348,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
   const isEdit = !!material;
   const [nome, setNome] = useState(material?.nome || "");
   const [observacoes, setObservacoes] = useState(material?.observacoes || "");
-  const [tipoMedida, setTipoMedida] = useState(material?.tipo_medida || "Comprimento");
+  const [tipoMedida, setTipoMedida] = useState(material?.tipo_medida || "Área");
   const [preco, setPreco] = useState<number | "">(material?.preco_unitario ?? "");
   
   // New simplified calculator states
@@ -397,7 +397,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
       "Comprimento": "m",
       "Peso (kg)": "kg",
       "Volume (l)": "l",
-      "Área": "cm",
+      "Área": "m",
       "Unidade": "un"
     };
     setBuyUnit(defaults[tipoMedida] || "un");

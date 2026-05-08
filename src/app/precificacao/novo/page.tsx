@@ -71,7 +71,7 @@ function NovoProdutoContent() {
 
   useEffect(() => {
     if (!editId) return;
-    
+
     // Buscar dados básicos do produto
     supabase.from("produtos").select("*").eq("id", editId).single().then(({ data }) => {
       if (!data) return;
@@ -180,7 +180,7 @@ function NovoProdutoContent() {
     if (!editId) return;
     try {
       setSaving(true);
-      
+
       // Deletar materiais associados
       await supabase.from("produto_materiais").delete().eq("produto_id", editId);
 
@@ -221,7 +221,7 @@ function NovoProdutoContent() {
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
     const filePath = `uploads/${fileName}`;
 
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, { 
+    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, {
       contentType: mime,
       cacheControl: '3600',
       upsert: false
@@ -540,7 +540,7 @@ function NovoProdutoContent() {
 
               <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-[#F0E6E6] shadow-inner space-y-1">
                 <p className="text-xs font-bold text-[#6D6D6D]">Preço unitário</p>
-                <p className="text-2xl font-bold text-[#E5989B]">R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-[#E5989B]">R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           )}
@@ -611,7 +611,7 @@ function NovoProdutoContent() {
             confirmDelete();
           }}
           title={dependentBudgets.length > 0 ? "Exclusão Bloqueada" : "Excluir Produto"}
-          message={dependentBudgets.length > 0 
+          message={dependentBudgets.length > 0
             ? "Este produto não pode ser excluído porque está vinculado aos orçamentos abaixo. Remova-o dos orçamentos primeiro."
             : `Tem certeza que deseja excluir o produto "${nome}"? Esta ação não pode ser desfeita.`
           }

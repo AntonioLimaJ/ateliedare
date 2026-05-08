@@ -101,7 +101,7 @@ export function ProfitInputModal({ value, total, onClose, onConfirm, onOpenSugge
 
           <div className="bg-[#FAF7F2] rounded-xl p-4">
             <p className="text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest mb-1">Total</p>
-            <p className="text-xl font-bold text-[#E5989B]">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-xl font-bold text-[#E5989B]">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
 

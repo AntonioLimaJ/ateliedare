@@ -356,7 +356,7 @@ function NovoOrcamentoContent() {
               ))}
 
               <div className="pt-2 border-t border-[#F0E6E6] flex justify-between items-center">
-                <span className="text-sm font-bold text-[#2D2D2D]">Total dos itens</span>
+                <span className="text-sm font-bold text-[#2D2D2D]">Preço Total</span>
                 <span className="text-lg font-bold text-[#6D6D6D]">R$ {totalSugerido.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
@@ -369,12 +369,12 @@ function NovoOrcamentoContent() {
 
           <div className="space-y-4">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-[#6D6D6D] font-medium">Soma dos Itens</span>
+              <span className="text-[#6D6D6D] font-medium">Preço Total</span>
               <span className="text-[#2D2D2D] font-bold">R$ {totalSugerido.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Valor Final do Orçamento</label>
+              <label className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Valor com Reajuste</label>
               <div className="bg-[#FAF7F2] border border-[#F0E6E6] rounded-2xl px-6 py-4 flex items-center gap-3 focus-within:border-[#E5989B] transition-colors">
                 <span className="text-[#9E9E9E] font-bold">R$</span>
                 <input

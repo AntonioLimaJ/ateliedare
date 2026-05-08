@@ -15,6 +15,7 @@ interface Produto {
   nome: string;
   descricao?: string;
   preco_final: number;
+  preco_sugerido?: number;
   imagem_url?: string;
   favorito: boolean;
   created_at: string;
@@ -122,7 +123,16 @@ export default function PrecificacaoDashboard() {
     const total = materiais + labor;
     const lucro = total * ((p.margem_lucro || 0) / 100);
     const base = total + lucro;
-    return base * (1 + taxPct / 100);
+    const suggested = base * (1 + taxPct / 100);
+
+    // Se o produto tem um preço final diferente do sugerido original,
+    // significa que houve um reajuste manual. Aplicamos a mesma proporção.
+    if (p.preco_final && p.preco_sugerido && p.preco_sugerido > 0 && Math.abs(p.preco_final - p.preco_sugerido) > 0.01) {
+      const ratio = p.preco_final / p.preco_sugerido;
+      return suggested * ratio;
+    }
+
+    return suggested;
   };
 
   const tipoLabel = (tipo: string) => ({ "Comprimento": "/m", "Peso (kg)": "/kg", "Volume (l)": "/l", "Área": "/m²" }[tipo] || "/un");
@@ -244,7 +254,7 @@ export default function PrecificacaoDashboard() {
                       {p.descricao && <p className="text-[11px] text-[#9E9E9E] truncate">{p.descricao}</p>}
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black text-[#E5989B]">R$ {calcPrecoAtual(p).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-black text-[#E5989B]">R$ {calcPrecoAtual(p).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                     <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#E5989B] opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>

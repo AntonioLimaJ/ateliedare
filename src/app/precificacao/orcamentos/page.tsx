@@ -28,11 +28,11 @@ export default function PrecificacaoDashboard() {
 
     const handleShareImage = async (orc: any) => {
         setSharingId(orc.id);
-        
+
         // Pequeno delay para garantir que o elemento oculto renderizou com os dados do orc
         setTimeout(async () => {
             if (!ticketRef.current) return;
-            
+
             try {
                 const dataUrl = await toPng(ticketRef.current, {
                     quality: 0.95,
@@ -41,7 +41,7 @@ export default function PrecificacaoDashboard() {
                 });
 
                 const blob = await (await fetch(dataUrl)).blob();
-                const file = new File([blob], `orcamento-${orc.id.slice(0,5)}.png`, { type: 'image/png' });
+                const file = new File([blob], `orcamento-${orc.id.slice(0, 5)}.png`, { type: 'image/png' });
 
                 // Tentar copiar para a área de transferência (Ctrl+V)
                 try {
@@ -119,10 +119,10 @@ export default function PrecificacaoDashboard() {
                 .from("orcamentos")
                 .update({ [field]: value })
                 .eq("id", id);
-            
+
             if (error) throw error;
-            
-            setOrcamentos(orcamentos.map(orc => 
+
+            setOrcamentos(orcamentos.map(orc =>
                 orc.id === id ? { ...orc, [field]: value } : orc
             ));
         } catch (error) {
@@ -181,16 +181,16 @@ export default function PrecificacaoDashboard() {
     const concluidos = orcamentosFiltrados.filter(orc => orc.entregue && orc.pago);
     const pagamentoPendente = orcamentosFiltrados.filter(orc => orc.entregue && !orc.pago);
     const emProducaoTotais = orcamentosFiltrados.filter(orc => !orc.entregue);
-    
+
     const proximos = emProducaoTotais.filter(orc => orc.data_entrega && isProximo(orc.data_entrega));
     const pendentes = emProducaoTotais.filter(orc => !proximos.find(p => p.id === orc.id));
 
     const BudgetCard = ({ orc }: { orc: any }) => {
         const urgente = isProximo(orc.data_entrega) && !orc.entregue;
-        
+
         return (
             <div key={orc.id} className="relative">
-                <div 
+                <div
                     onClick={() => setExpandedId(expandedId === orc.id ? null : orc.id)}
                     className={`block bg-white border rounded-3xl p-5 shadow-sm transition-all cursor-pointer ${expandedId === orc.id ? 'border-[#E5989B] shadow-md ring-1 ring-[#E5989B]/10' : 'border-[#F0E6E6] hover:border-[#E5989B]/30'} ${urgente ? 'ring-1 ring-red-100 bg-red-50/10' : ''}`}
                 >
@@ -224,7 +224,7 @@ export default function PrecificacaoDashboard() {
                                     R$ {orc.total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setExpandedId(expandedId === orc.id ? null : orc.id);
@@ -252,11 +252,11 @@ export default function PrecificacaoDashboard() {
                                                 <span className="text-xs font-bold text-[#2D2D2D]">{item.quantidade}x {item.nome}</span>
                                                 {item.notas && <span className="text-[10px] text-[#6D6D6D] italic line-clamp-1">{item.notas}</span>}
                                             </div>
-                                            <span className="text-xs font-bold text-[#6D6D6D]">R$ {item.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                                            <span className="text-xs font-bold text-[#6D6D6D]">R$ {item.total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     ))}
                                     <div className="flex gap-2 mt-2">
-                                        <button 
+                                        <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 router.push(`/precificacao/orcamentos/novo?id=${orc.id}`);
@@ -266,7 +266,7 @@ export default function PrecificacaoDashboard() {
                                             <Pencil size={14} />
                                             Editar
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleShareImage(orc);
@@ -283,7 +283,7 @@ export default function PrecificacaoDashboard() {
                                                 </>
                                             )}
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={(e) => { e.stopPropagation(); handleDownloadImage(orc); }}
                                             className="w-12 h-12 bg-[#F8EDEB] text-[#E5989B] rounded-2xl flex items-center justify-center shadow-sm active:scale-95 transition-transform"
                                             title="Baixar Imagem"
@@ -298,15 +298,15 @@ export default function PrecificacaoDashboard() {
 
                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#F0E6E6]/50">
                         <div className="flex gap-2">
-                            <button 
+                            <button
                                 onClick={(e) => { e.stopPropagation(); toggleStatus(orc.id, 'entregue', !orc.entregue); }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all ${orc.entregue ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-white border-[#F0E6E6] text-[#9E9E9E]'}`}
                             >
                                 <Truck size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">{orc.entregue ? 'Entregue' : 'Entregar'}</span>
                             </button>
-                            
-                            <button 
+
+                            <button
                                 onClick={(e) => { e.stopPropagation(); toggleStatus(orc.id, 'pago', !orc.pago); }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all ${orc.pago ? 'bg-green-50 border-green-100 text-green-600' : 'bg-white border-[#F0E6E6] text-[#9E9E9E]'}`}
                             >
@@ -314,7 +314,7 @@ export default function PrecificacaoDashboard() {
                                 <span className="text-[10px] font-bold uppercase tracking-wider">{orc.pago ? 'Pago' : 'Pagar'}</span>
                             </button>
                         </div>
-                        
+
                         {orc.data_entrega && (
                             <div className={`flex items-center gap-1 ${urgente ? 'text-red-500' : 'text-[#6D6D6D]'}`}>
                                 <Calendar size={12} className={urgente ? "text-red-500" : "text-[#E5989B]"} />
@@ -332,7 +332,7 @@ export default function PrecificacaoDashboard() {
             <header className="sticky top-0 z-40 bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg h-20">
                 <AnimatePresence mode="wait">
                     {!isSearching ? (
-                        <motion.div 
+                        <motion.div
                             key="logo"
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -348,7 +348,7 @@ export default function PrecificacaoDashboard() {
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.div 
+                        <motion.div
                             key="search"
                             initial={{ opacity: 0, width: 0 }}
                             animate={{ opacity: 1, width: "100%" }}
@@ -370,7 +370,7 @@ export default function PrecificacaoDashboard() {
                     )}
                 </AnimatePresence>
 
-                <button 
+                <button
                     onClick={() => {
                         setIsSearching(!isSearching);
                         if (isSearching) setSearchQuery("");
@@ -413,7 +413,7 @@ export default function PrecificacaoDashboard() {
                                 </div>
                                 <h3 className="text-lg font-bold text-[#2D2D2D]">Nenhum resultado</h3>
                                 <p className="text-sm text-[#9E9E9E] mt-2 mb-8">Não encontramos nada para "{searchQuery}". Tente outro termo.</p>
-                                <button 
+                                <button
                                     onClick={() => setSearchQuery("")}
                                     className="px-8 py-3 bg-[#E5989B] text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform"
                                 >
@@ -444,7 +444,7 @@ export default function PrecificacaoDashboard() {
                                     {pendentes.length}
                                 </span>
                             </div>
-                            
+
                             {pendentes.length === 0 && proximos.length === 0 && pagamentoPendente.length === 0 && concluidos.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-[#9E9E9E]">
                                     <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mb-4">
@@ -483,9 +483,9 @@ export default function PrecificacaoDashboard() {
                                     <h2 className="text-lg font-bold text-[#6D6D6D]">Concluídos</h2>
                                     <CheckCircle2 size={18} className="text-green-500" />
                                 </div>
-                                
+
                                 {concluidos.map((orc) => (
-                                    <div 
+                                    <div
                                         key={orc.id}
                                         onClick={() => expandedId === orc.id ? setExpandedId(null) : setExpandedId(orc.id)}
                                         className="block bg-white/50 border border-[#F0E6E6] rounded-3xl p-5 shadow-sm active:scale-[0.99] transition-all cursor-pointer"
@@ -504,7 +504,7 @@ export default function PrecificacaoDashboard() {
                                             </div>
                                             <span className="text-sm font-bold text-[#9E9E9E]">R$ {orc.total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
-                                        
+
                                         <AnimatePresence>
                                             {expandedId === orc.id && (
                                                 <motion.div
@@ -517,11 +517,11 @@ export default function PrecificacaoDashboard() {
                                                         {orc.orcamento_itens?.map((item: any) => (
                                                             <div key={item.id} className="flex justify-between items-center bg-[#FAF7F2] p-3 rounded-2xl">
                                                                 <span className="text-xs font-bold text-[#6D6D6D]">{item.quantidade}x {item.nome}</span>
-                                                                <span className="text-xs font-bold text-[#9E9E9E]">R$ {item.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                                                                <span className="text-xs font-bold text-[#9E9E9E]">R$ {item.total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                             </div>
                                                         ))}
                                                         <div className="flex gap-2 mt-3">
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     router.push(`/precificacao/orcamentos/novo?id=${orc.id}`);
@@ -531,7 +531,7 @@ export default function PrecificacaoDashboard() {
                                                                 <Pencil size={14} />
                                                                 Editar
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleShareImage(orc);
@@ -548,7 +548,7 @@ export default function PrecificacaoDashboard() {
                                                                     </>
                                                                 )}
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => { e.stopPropagation(); handleDownloadImage(orc); }}
                                                                 className="w-12 h-12 bg-white border border-[#F0E6E6] text-[#6D6D6D] rounded-2xl flex items-center justify-center active:scale-95 transition-transform"
                                                                 title="Baixar Imagem"
@@ -558,15 +558,15 @@ export default function PrecificacaoDashboard() {
                                                         </div>
 
                                                         <div className="flex gap-2 pt-2 border-t border-[#F0E6E6]/50 mt-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => { e.stopPropagation(); toggleStatus(orc.id, 'entregue', !orc.entregue); }}
                                                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all bg-blue-50 border-blue-100 text-blue-600"
                                                             >
                                                                 <Truck size={14} />
                                                                 <span className="text-[10px] font-bold uppercase tracking-wider">Entregue</span>
                                                             </button>
-                                                            
-                                                            <button 
+
+                                                            <button
                                                                 onClick={(e) => { e.stopPropagation(); toggleStatus(orc.id, 'pago', !orc.pago); }}
                                                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all bg-green-50 border-green-100 text-green-600"
                                                             >
@@ -597,13 +597,13 @@ export default function PrecificacaoDashboard() {
             <BottomNav />
 
             <div className="fixed -left-[2000px] top-0 pointer-events-none">
-                <div 
+                <div
                     ref={ticketRef}
                     className="w-[450px] bg-[#FAF7F2] p-8 font-sans"
                 >
                     {orcamentos.find(o => o.id === sharingId) && (() => {
                         const orc = orcamentos.find(o => o.id === sharingId);
-                        
+
                         // Calcular desconto
                         const totalItens = orc.orcamento_itens?.reduce((acc: number, it: any) => acc + it.total, 0) || 0;
                         const valorDesconto = totalItens - orc.total;
@@ -663,19 +663,19 @@ export default function PrecificacaoDashboard() {
                                 <div className="space-y-3 bg-[#FAF7F2] p-6 rounded-[32px] border border-[#F0E6E6]/50">
                                     <div className="flex justify-between items-center text-xs text-[#6D6D6D] font-bold">
                                         <span>Subtotal dos itens</span>
-                                        <span>R$ {totalItens.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                                        <span>R$ {totalItens.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
-                                    
+
                                     {valorDesconto > 0 && (
                                         <div className="flex justify-between items-center text-xs text-green-600 font-bold">
                                             <span>Desconto Aplicado ({pctDesconto.toFixed(0)}%)</span>
-                                            <span>- R$ {valorDesconto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                                            <span>- R$ {valorDesconto.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     )}
 
                                     <div className="pt-3 border-t border-[#F0E6E6] flex justify-between items-center">
                                         <span className="text-sm font-black text-[#2D2D2D] uppercase tracking-widest">Total Final</span>
-                                        <span className="text-2xl font-black text-[#E5989B]">R$ {orc.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                                        <span className="text-2xl font-black text-[#E5989B]">R$ {orc.total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
 

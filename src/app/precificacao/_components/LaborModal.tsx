@@ -75,11 +75,11 @@ export function LaborModal({ onClose, onConfirm, hourlyRate = 6.25 }: LaborModal
         <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-4 border border-[#F0E6E6] mb-8">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-[#6D6D6D]">Hora de trabalho</span>
-            <span className="text-sm font-bold text-[#2D2D2D]">R$ {hourlyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <span className="text-sm font-bold text-[#2D2D2D]">R$ {hourlyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="flex items-center justify-between border-t border-[#F0E6E6] pt-4">
             <span className="text-base font-bold text-[#2D2D2D]">Total</span>
-            <span className="text-lg font-bold text-[#E5989B]">R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <span className="text-lg font-bold text-[#E5989B]">R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
 

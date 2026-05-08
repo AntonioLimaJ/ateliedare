@@ -48,7 +48,7 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-[#2D2D2D] text-sm">{product.nome}</h3>
-              <p className="text-xs text-[#6D6D6D]">Preço unitário: R$ {product.preco_final.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="text-xs text-[#6D6D6D]">Preço unitário: R$ {product.preco_final.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
           </div>
 
@@ -87,7 +87,7 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
           <div className="pt-4 border-t border-[#F0E6E6] flex justify-between items-center">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-[#6D6D6D]">Subtotal</span>
-              <span className="text-xl font-bold text-[#E5989B]">R$ {total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-[#E5989B]">R$ {total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <button
               onClick={() => onConfirm({ quantidade, notas, total })}

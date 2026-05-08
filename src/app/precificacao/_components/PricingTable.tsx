@@ -33,10 +33,10 @@ export function PricingTable({
     <div className="bg-white rounded-xl p-6 shadow-xl space-y-6 border border-[#F0E6E6]">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold text-[#2D2D2D]">Total</h3>
+          <h3 className="text-sm font-bold text-[#2D2D2D]">Preço Final</h3>
           {isCustom && (
             <span className="text-[10px] font-bold bg-[#F8EDEB] text-[#E5989B] px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Editado
+              Com Reajuste
             </span>
           )}
         </div>
@@ -45,7 +45,7 @@ export function PricingTable({
         </p>
         {isCustom && (
           <p className="text-xs text-[#9E9E9E]">
-            Sugerido: R$ {suggestedPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            Preço Total: R$ {suggestedPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         )}
       </div>
@@ -103,7 +103,7 @@ export function PricingTable({
         style={{ touchAction: "manipulation" }}
       >
         <Edit2 size={16} />
-        {isCustom ? "Alterar preço final" : "Editar preço final"}
+        {isCustom ? "Alterar reajuste" : "Fazer reajuste"}
       </button>
     </div>
   );
@@ -128,14 +128,14 @@ export function PriceEditModal({ suggestedPrice, currentPrice, onClose, onConfir
     <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/60 p-4">
       <div className="bg-white w-full max-w-md rounded-[32px] p-8 space-y-6 shadow-2xl border border-[#F0E6E6]">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[#2D2D2D]">Editar Preço Final</h2>
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Ajustar Valor Final</h2>
           <button onClick={onClose} className="p-2 text-[#9E9E9E] hover:text-[#6D6D6D]">
             <X size={20} />
           </button>
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Preço sugerido pelo sistema</p>
+          <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Preço total calculado</p>
           <p className="text-lg font-bold text-[#6D6D6D]">
             R$ {suggestedPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
@@ -143,7 +143,7 @@ export function PriceEditModal({ suggestedPrice, currentPrice, onClose, onConfir
 
         <div className="relative">
           <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
-            Novo preço final
+            Novo valor (com reajuste)
           </label>
           <div className="bg-transparent border border-[#F0E6E6] focus-within:border-[#E5989B] rounded-xl px-4 py-4 flex items-center gap-2 transition-colors">
             <span className="text-[#9E9E9E] font-bold">R$</span>
@@ -174,7 +174,7 @@ export function PriceEditModal({ suggestedPrice, currentPrice, onClose, onConfir
               onClick={() => onConfirm(null)}
               className="w-full py-3 text-[#9E9E9E] font-bold text-sm"
             >
-              Voltar ao preço sugerido
+              Voltar ao preço original
             </button>
           )}
           <button onClick={onClose} className="w-full py-3 border border-[#F0E6E6] text-[#9E9E9E] font-bold rounded-xl">

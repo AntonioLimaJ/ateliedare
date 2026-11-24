@@ -22,6 +22,8 @@ A página pública funciona sem Supabase. O painel em `/precificacao` exige uma 
 3. Prepare o deploy com `NEXT_PUBLIC_SUPABASE_URL` e a chave pública. Aplique a migração `supabase/migrations/202611240001_painel_e_orcamentos.sql` junto com a publicação do site. Durante a troca entre as versões, o painel antigo pode ficar temporariamente indisponível. Nenhuma chave administrativa deve ser usada pelo site.
 4. Valide o acesso de uma conta da equipe, o bloqueio de uma conta comum, as fotos no bucket público `precificacao` e os fluxos de produto e orçamento. Se o projeto usa Realtime, confirme que `produtos` e `materiais` fazem parte da publicação `supabase_realtime`. Ao recuperar o foco ou a internet, o painel também relê a lista sem depender do WebSocket.
 
+Para convidar uma conta nova, configure a URL de produção em **Authentication → URL Configuration** e use `{{ .SiteURL }}/convite?token_hash={{ .TokenHash }}` no link do modelo **Invite user**. Emita o convite e atribua a permissão de equipe antes de compartilhar o link. A pessoa convidada confirma o acesso e define a própria senha. Se o projeto não tiver SMTP apropriado, gere o convite com `auth.admin.generateLink` em um ambiente administrativo seguro e entregue o link individualmente por um canal autorizado.
+
 O compartilhamento parte de **Orçamentos → Copiar link**. Cada link é válido por sete dias a partir da emissão. Links antigos associados diretamente ao identificador interno devem ser substituídos por um link novo.
 
 ## Disponibilidade do Supabase

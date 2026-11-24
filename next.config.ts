@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/view/:path*",
+        source: "/:route(view|convite|definir-senha)/:path*",
         headers: [
           { key: "Cache-Control", value: "private, no-store" },
           { key: "Referrer-Policy", value: "no-referrer" },

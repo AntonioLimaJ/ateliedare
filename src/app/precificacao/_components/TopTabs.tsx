@@ -8,30 +8,17 @@ interface TopTabsProps {
 const tabs = [
   { id: "produtos", label: "Produtos" },
   { id: "materiais", label: "Materiais" },
-  { id: "custos", label: "Custos Fixos" },
+  { id: "custos", label: "Custos fixos" },
 ];
 
 export function TopTabs({ activeTab, onTabChange }: TopTabsProps) {
   return (
-    <div className="flex bg-[#F8EDEB] p-1 rounded-xl gap-1 mx-4 mb-6 border border-[#F0E6E6]">
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
+    <div aria-label="Seções da precificação" role="group" className="mb-5 grid grid-cols-3 gap-1 rounded-xl border border-[#e9dcd4] bg-[#f1e7df] p-1">
+      {tabs.map(tab => {
+        const active = activeTab === tab.id;
         return (
-          <button
-            key={tab.id}
-            type="button"
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              onTabChange(tab.id);
-            }}
-            onClick={() => onTabChange(tab.id)}
-            style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent", cursor: "pointer" }}
-            className={`flex-1 py-3 text-sm font-bold transition-colors rounded-lg ${
-              isActive
-                ? "bg-white text-[#E5989B] shadow-sm"
-                : "text-[#9E9E9E] hover:text-[#6D6D6D]"
-            }`}
-          >
+          <button key={tab.id} type="button" aria-pressed={active} onClick={() => onTabChange(tab.id)}
+            className={`min-h-11 rounded-lg px-1 text-sm font-semibold transition-colors ${active ? "bg-white text-[#793751] shadow-sm" : "text-[#695850] hover:text-[#29201f]"}`}>
             {tab.label}
           </button>
         );

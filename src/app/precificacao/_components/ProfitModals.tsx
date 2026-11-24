@@ -1,7 +1,7 @@
 "use client";
 
-import { X, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { useState } from "react";
 
 interface ProfitSuggestionsModalProps {
@@ -40,10 +40,10 @@ export function ProfitSuggestionsModal({ onClose, onSelect }: ProfitSuggestionsM
                 onClick={() => onSelect(s.value)}
                 className="w-full flex items-center justify-between py-4 border-b border-[#F0E6E6] last:border-0 group"
               >
-                <span className="text-sm font-medium text-[#2D2D2D] group-active:text-[#E5989B] transition-colors">
+                <span className="text-sm font-medium text-[#2D2D2D] group-active:text-[#793751] transition-colors">
                   {s.label}: {s.value}%
                 </span>
-                <ArrowRight size={18} className="text-[#9E9E9E] group-active:text-[#E5989B] transition-colors" />
+                <ArrowRight size={18} className="text-[#695850] group-active:text-[#793751] transition-colors" />
               </button>
             ))}
           </div>
@@ -51,7 +51,7 @@ export function ProfitSuggestionsModal({ onClose, onSelect }: ProfitSuggestionsM
           <div className="flex justify-end pt-2">
             <button 
               onClick={onClose}
-              className="text-sm font-bold text-[#E5989B] px-4 py-2 hover:bg-[#F8EDEB] rounded-lg transition-colors"
+              className="text-sm font-bold text-[#793751] px-4 py-2 hover:bg-[#F8EDEB] rounded-lg transition-colors"
             >
               Fechar
             </button>
@@ -84,7 +84,7 @@ export function ProfitInputModal({ value, total, onClose, onConfirm, onOpenSugge
         
         <div className="space-y-4">
           <div className="relative">
-            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#E5989B] uppercase tracking-widest">
+            <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#793751] uppercase tracking-widest">
               Lucro
             </label>
             <div className="flex items-center bg-transparent border-2 border-[#E5989B]/50 rounded-xl px-4 py-4 focus-within:border-[#E5989B] transition-colors">
@@ -95,19 +95,19 @@ export function ProfitInputModal({ value, total, onClose, onConfirm, onOpenSugge
                 placeholder="0"
                 className="bg-transparent w-full text-[#2D2D2D] font-bold outline-none"
               />
-              <span className="text-[#9E9E9E] font-bold">%</span>
+              <span className="text-[#695850] font-bold">%</span>
             </div>
           </div>
 
           <div className="bg-[#FAF7F2] rounded-xl p-4">
-            <p className="text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest mb-1">Total</p>
-            <p className="text-xl font-bold text-[#E5989B]">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-[10px] font-bold text-[#695850] uppercase tracking-widest mb-1">Total</p>
+            <p className="text-xl font-bold text-[#793751]">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
 
         <button 
           onClick={onOpenSuggestions}
-          className="w-full text-center text-sm font-bold text-[#E5989B] py-2"
+          className="w-full text-center text-sm font-bold text-[#793751] py-2"
         >
           Não sei quanto lucrar
         </button>
@@ -115,13 +115,13 @@ export function ProfitInputModal({ value, total, onClose, onConfirm, onOpenSugge
         <div className="space-y-3 pt-4">
           <button 
             onClick={() => onConfirm(Number(localValue || 0))}
-            className={`w-full py-4 font-bold rounded-2xl transition-all ${localValue !== "" ? "bg-[#E5989B] text-white shadow-lg active:scale-[0.98]" : "bg-[#F0E6E6] text-[#9E9E9E] pointer-events-none"}`}
+            className={`w-full py-4 font-bold rounded-2xl transition-all ${localValue !== "" ? "bg-[#793751] text-white shadow-lg active:scale-[0.98]" : "bg-[#F0E6E6] text-[#695850] pointer-events-none"}`}
           >
             Confirmar
           </button>
           <button 
             onClick={onClose}
-            className="w-full py-4 border border-[#F0E6E6] text-[#9E9E9E] font-bold rounded-2xl hover:bg-[#F8EDEB] transition-colors"
+            className="w-full py-4 border border-[#F0E6E6] text-[#695850] font-bold rounded-2xl hover:bg-[#F8EDEB] transition-colors"
           >
             Cancelar
           </button>

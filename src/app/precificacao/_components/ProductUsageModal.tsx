@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { X, Check, Minus, Plus, StickyNote } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { formatCurrency, getUnitPrice, money, type Produto } from "@/lib/atelie";
 
 interface ProductUsageModalProps {
-  product: any;
+  product: Produto;
   onClose: () => void;
   onConfirm: (data: { quantidade: number; notas: string; total: number }) => void;
 }
@@ -14,7 +16,8 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
   const [quantidade, setQuantidade] = useState(1);
   const [notas, setNotas] = useState("");
 
-  const total = product.preco_final * quantidade;
+  const unitPrice = getUnitPrice(product);
+  const total = money(unitPrice * quantidade);
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -26,11 +29,11 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
         <header className="p-6 border-b border-[#F0E6E6] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#F8EDEB] flex items-center justify-center">
-              <Plus size={20} className="text-[#E5989B]" />
+              <Plus size={20} className="text-[#793751]" />
             </div>
             <h2 className="text-xl font-bold text-[#2D2D2D]">Configurar Item</h2>
           </div>
-          <button onClick={onClose} className="p-2 text-[#9E9E9E]">
+          <button onClick={onClose} aria-label="Fechar item" className="p-2 text-[#695850]">
             <X size={24} />
           </button>
         </header>
@@ -39,32 +42,34 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
           <div className="flex items-center gap-4 p-4 bg-[#FAF7F2] rounded-2xl border border-[#F0E6E6]">
             <div className="w-12 h-12 rounded-lg bg-white overflow-hidden border border-[#F0E6E6]">
                {product.imagem_url ? (
-                 <img src={product.imagem_url} alt={product.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                 <Image src={product.imagem_url} alt="" width={48} height={48} unoptimized className="w-full h-full object-cover" />
                ) : (
                  <div className="w-full h-full flex items-center justify-center bg-white">
-                   <Plus size={20} className="text-[#E5989B]/30" />
+                   <Plus size={20} className="text-[#793751]/30" />
                  </div>
                )}
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-[#2D2D2D] text-sm">{product.nome}</h3>
-              <p className="text-xs text-[#6D6D6D]">Preço unitário: R$ {product.preco_final.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-xs text-[#6D6D6D]">Preço unitário: {formatCurrency(unitPrice)}</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <label className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Quantidade</label>
+            <label className="text-xs font-bold text-[#695850] uppercase tracking-widest">Quantidade</label>
             <div className="flex items-center justify-between bg-[#FAF7F2] border border-[#F0E6E6] rounded-2xl p-2">
               <button
+                aria-label="Diminuir quantidade"
                 onClick={() => setQuantidade(Math.max(1, quantidade - 1))}
-                className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#E5989B] shadow-sm active:scale-95 transition-transform"
+                className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#793751] shadow-sm active:scale-95 transition-transform"
               >
                 <Minus size={20} />
               </button>
               <span className="text-2xl font-bold text-[#2D2D2D]">{quantidade}</span>
               <button
+                aria-label="Aumentar quantidade"
                 onClick={() => setQuantidade(quantidade + 1)}
-                className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#E5989B] shadow-sm active:scale-95 transition-transform"
+                className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#793751] shadow-sm active:scale-95 transition-transform"
               >
                 <Plus size={20} />
               </button>
@@ -72,14 +77,15 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
           </div>
 
           <div className="space-y-3">
-            <label className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Nota/Personalização</label>
+            <label className="text-xs font-bold text-[#695850] uppercase tracking-widest">Nota/Personalização</label>
             <div className="bg-[#FAF7F2] border border-[#F0E6E6] rounded-2xl p-4 flex gap-3 focus-within:border-[#E5989B] transition-colors">
-              <StickyNote size={20} className="text-[#9E9E9E] mt-1" />
+              <StickyNote size={20} className="text-[#695850] mt-1" />
               <textarea
+                aria-label="Nota para o cliente"
                 placeholder="Ex: Nome da criança, cor específica..."
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
-                className="w-full bg-transparent outline-none text-[#2D2D2D] font-medium placeholder-[#9E9E9E] min-h-[80px] resize-none"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] font-medium placeholder-[#695850] min-h-[80px] resize-none"
               />
             </div>
           </div>
@@ -87,11 +93,11 @@ export function ProductUsageModal({ product, onClose, onConfirm }: ProductUsageM
           <div className="pt-4 border-t border-[#F0E6E6] flex justify-between items-center">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-[#6D6D6D]">Subtotal</span>
-              <span className="text-xl font-bold text-[#E5989B]">R$ {total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-[#793751]">{formatCurrency(total)}</span>
             </div>
             <button
               onClick={() => onConfirm({ quantidade, notas, total })}
-              className="bg-[#E5989B] text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-[#E5989B]/20 active:scale-95 transition-transform flex items-center gap-2"
+              className="bg-[#793751] text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-[#E5989B]/20 active:scale-95 transition-transform flex items-center gap-2"
             >
               <Check size={20} />
               Confirmar

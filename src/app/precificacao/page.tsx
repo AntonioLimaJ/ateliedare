@@ -1,331 +1,236 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Search, User, Lock, Star, Package, Pencil, Trash } from "lucide-react";
+import { LogOut, Package, Pencil, Plus, Search, Star } from "lucide-react";
 import { BottomNav } from "./_components/BottomNav";
 import { TopTabs } from "./_components/TopTabs";
-import { CustosTab, useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "./_components/CustosTab";
-import { MaterialFormModal, Material } from "./_components/MaterialManager";
-import { supabase } from "@/lib/supabase";
+import { useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "@/lib/use-configuracoes";
+import type { Material } from "./_components/MaterialManager";
+import { getSupabase } from "@/lib/supabase";
+import { formatCurrency, searchText, type Produto } from "@/lib/atelie";
+import { signOut } from "@/app/entrar/actions";
 
-interface Produto {
-  id: string;
-  nome: string;
-  descricao?: string;
-  preco_final: number;
-  preco_sugerido?: number;
-  imagem_url?: string;
-  favorito: boolean;
-  created_at: string;
-  custo_materiais?: number;
-  custo_trabalho?: number;
-  tempo_trabalho?: number;
-  margem_lucro?: number;
-  rendimento?: number;
-}
+const MaterialFormModal = dynamic(() => import("./_components/MaterialManager").then(m => m.MaterialFormModal));
+const CustosTab = dynamic(() => import("./_components/CustosTab").then(m => m.CustosTab));
 
 export default function PrecificacaoDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("produtos");
   const [materials, setMaterials] = useState<Material[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showMaterialForm, setShowMaterialForm] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
-  const { config } = useConfiguracoes();
+  const [loadedTab, setLoadedTab] = useState("");
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [materialForm, setMaterialForm] = useState<Material | "new" | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-
-  useEffect(() => { fetchProdutos(); }, []);
-  useEffect(() => {
-    if (activeTab === "materiais") fetchMaterials();
-    else if (activeTab === "produtos") fetchProdutos();
-  }, [activeTab]);
+  const costSettings = useConfiguracoes();
+  const { config } = costSettings;
 
   useEffect(() => {
-    const produtosChannel = supabase
-      .channel("produtos-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "produtos" }, (payload) => {
-        if (payload.eventType === "INSERT") {
-          setProdutos((prev) => {
-            const exists = prev.some(p => p.id === (payload.new as Produto).id);
-            if (exists) return prev;
-            return [payload.new as Produto, ...prev];
-          });
-        } else if (payload.eventType === "UPDATE") {
-          setProdutos((prev) => prev.map((p) => p.id === (payload.new as Produto).id ? payload.new as Produto : p));
-        } else if (payload.eventType === "DELETE") {
-          setProdutos((prev) => prev.filter((p) => p.id !== (payload.old as any).id));
-        }
-      })
-      .subscribe();
+    if (activeTab === "custos") return;
 
-    const materiaisChannel = supabase
-      .channel("materiais-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "materiais" }, (payload) => {
-        if (payload.eventType === "INSERT") {
-          setMaterials((prev) => {
-            const exists = prev.some(m => m.id === (payload.new as Material).id);
-            if (exists) return prev;
-            return [...prev, payload.new as Material].sort((a, b) => a.nome.localeCompare(b.nome));
-          });
-        } else if (payload.eventType === "UPDATE") {
-          setMaterials((prev) => prev.map((m) => m.id === (payload.new as Material).id ? payload.new as Material : m));
-        } else if (payload.eventType === "DELETE") {
-          setMaterials((prev) => prev.filter((p) => p.id !== (payload.old as any).id));
-        }
-      })
-      .subscribe();
+    const supabase = getSupabase();
+    const isMaterials = activeTab === "materiais";
+    const table = isMaterials ? "materiais" : "produtos";
+    let controller: AbortController | undefined;
+    let stale = false;
+    let subscribed = false;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
-    return () => {
-      supabase.removeChannel(produtosChannel);
-      supabase.removeChannel(materiaisChannel);
-    };
-  }, []);
+    async function refresh() {
+      controller?.abort();
+      const current = new AbortController();
+      controller = current;
+      const { data, error: responseError } = await supabase
+        .from(table).select("*")
+        .order(isMaterials ? "nome" : "created_at", { ascending: isMaterials })
+        .abortSignal(AbortSignal.any([current.signal, AbortSignal.timeout(10000)]));
 
-  const fetchMaterials = async () => {
-    setLoading(true);
-    try {
-      const { data } = await supabase.from("materiais").select("*").order("nome");
-      if (data) {
-        // Garantir que não existam duplicatas vindas do banco ou do estado anterior
-        const unique = data.filter((item, index, self) =>
-          index === self.findIndex((t) => t.id === item.id)
-        );
-        setMaterials(unique);
+      if (stale || current.signal.aborted) return;
+      if (responseError) {
+        setError("Não foi possível atualizar os dados. Confira a conexão e tente novamente.");
+      } else {
+        if (isMaterials) setMaterials(data ?? []);
+        else setProdutos(data ?? []);
+        setError("");
       }
-    } catch (e) {
-    } finally { setLoading(false); }
-  };
-
-  const fetchProdutos = async () => {
-    setLoading(true);
-    try {
-      const { data } = await supabase.from("produtos").select("*").order("created_at", { ascending: false });
-      if (data) {
-        const unique = data.filter((item, index, self) =>
-          index === self.findIndex((t) => t.id === item.id)
-        );
-        setProdutos(unique);
-      }
-    } catch (e) {
-    } finally { setLoading(false); }
-  };
-
-  const calcPrecoAtual = (p: Produto): number => {
-    if (!p.tempo_trabalho && !p.custo_materiais) return p.preco_final || 0;
-    const custoHora = calcularCustoHora(config);
-    const taxPct = calcularTotalTaxPct(config);
-    const labor = ((p.tempo_trabalho || 0) / 3600) * custoHora;
-    const materiais = p.custo_materiais || 0;
-    const total = materiais + labor;
-    const lucro = total * ((p.margem_lucro || 0) / 100);
-    const base = total + lucro;
-    const suggested = base * (1 + taxPct / 100);
-
-    // Se o produto tem um preço final diferente do sugerido original,
-    // significa que houve um reajuste manual. Aplicamos a mesma proporção.
-    if (p.preco_final && p.preco_sugerido && p.preco_sugerido > 0 && Math.abs(p.preco_final - p.preco_sugerido) > 0.01) {
-      const ratio = p.preco_final / p.preco_sugerido;
-      return suggested * ratio;
+      setLoadedTab(table);
     }
 
-    return suggested;
+    function scheduleRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { void refresh(); }, 120);
+    }
+
+    const channel = supabase.channel(`atelie-${table}-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table }, scheduleRefresh)
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        if (subscribed) scheduleRefresh();
+        subscribed = true;
+      });
+
+    const onVisible = () => { if (document.visibilityState === "visible") scheduleRefresh(); };
+    const onOffline = () => setError("Você está sem internet. Os dados serão atualizados quando a conexão voltar.");
+    window.addEventListener("online", scheduleRefresh);
+    window.addEventListener("offline", onOffline);
+    document.addEventListener("visibilitychange", onVisible);
+    void refresh();
+
+    return () => {
+      stale = true;
+      controller?.abort();
+      clearTimeout(refreshTimer);
+      void supabase.removeChannel(channel);
+      window.removeEventListener("online", scheduleRefresh);
+      window.removeEventListener("offline", onOffline);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [activeTab, retry]);
+
+  const changeTab = useCallback((tab: string) => {
+    setActiveTab(tab);
+    setSearchQuery("");
+    setError("");
+  }, []);
+
+  const materialTab = activeTab === "materiais";
+  const costTab = activeTab === "custos";
+  const loading = !costTab && loadedTab !== activeTab;
+  const search = searchText(searchQuery);
+  const materialsFound = materials.filter(item => searchText(item.nome).includes(search));
+  const productsFound = produtos.filter(item => searchText(item.nome).includes(search));
+  const count = materialTab ? materialsFound.length : productsFound.length;
+  const hourlyRate = calcularCustoHora(config);
+  const taxRate = calcularTotalTaxPct(config);
+
+  const currentPrice = (product: Produto) => {
+    if (costSettings.loading || costSettings.configError || (!product.tempo_trabalho && !product.custo_materiais)) return Number(product.preco_final || 0);
+    const labor = Number(product.tempo_trabalho || 0) / 3600 * hourlyRate;
+    const suggested = (Number(product.custo_materiais || 0) + labor)
+      * (1 + Number(product.margem_lucro || 0) / 100) * (1 + taxRate / 100);
+    const original = Number(product.preco_sugerido || 0);
+    const final = Number(product.preco_final || 0);
+    return original > 0 && Math.abs(final - original) > 0.01 ? suggested * final / original : suggested;
   };
 
-  const tipoLabel = (tipo: string) => ({ "Comprimento": "/m", "Peso (kg)": "/kg", "Volume (l)": "/l", "Área": "/m²" }[tipo] || "/un");
-
-  const produtosFiltrados = produtos.filter(p => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
-  const materiaisFiltrados = materials.filter(m => m.nome.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  const totalEstoque = produtosFiltrados.reduce((acc, p) => acc + calcPrecoAtual(p), 0);
+  const addItem = () => {
+    if (materialTab) setMaterialForm("new");
+    else router.push("/precificacao/novo");
+  };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] pb-24 font-sans antialiased selection:bg-[#E5989B]/30">
-      <header className="sticky top-0 z-[100] bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between shadow-lg h-20">
-        <div className="flex items-center gap-3 flex-1">
-          {!isSearching ? (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
-              <div className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center overflow-hidden">
-                <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold text-[#2D2D2D] leading-tight">Ateliê da Re</h1>
-                <p className="text-[11px] font-medium text-[#E5989B] uppercase tracking-widest">Bordados Eletrônicos</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 mr-4 animate-in fade-in slide-in-from-right-4">
-              <div className="relative">
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder={`Pesquisar ${activeTab === "produtos" ? "produtos" : "materiais"}...`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 bg-[#FAF7F2] border border-[#F0E6E6] rounded-2xl px-12 text-sm focus:outline-none focus:border-[#E5989B] transition-all"
-                />
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9E9E9E]" />
-              </div>
-            </div>
-          )}
+    <div className="min-h-svh bg-[#faf6ef] pb-24 text-[#29201f]">
+      <header className="sticky top-0 z-40 border-b border-[#e9dcd4] bg-[#fffdf9]">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-7">
+          <Link href="/" className="flex min-h-11 items-center gap-3 font-semibold">
+            <Image src="/icon-192.png" alt="" width={39} height={39} className="rounded-full" />
+            Ateliê da Rê
+          </Link>
+          <form action={signOut}>
+            <button type="submit" className="site-button site-secondary"><LogOut size={16} aria-hidden /> Sair</button>
+          </form>
         </div>
-
-        {activeTab !== "custos" && (
-          <button
-            onClick={() => {
-              setIsSearching(!isSearching);
-              if (isSearching) setSearchQuery("");
-            }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isSearching ? 'bg-[#2D2D2D] text-white' : 'bg-[#F8EDEB] text-[#6D6D6D]'}`}
-          >
-            {isSearching ? <Plus size={20} className="rotate-45" /> : <Search size={20} />}
-          </button>
-        )}
       </header>
 
-      <main className="pt-6">
-        <div className="mx-4 mb-6">
-          {activeTab === "produtos" ? (
-            <div className="p-6 rounded-3xl bg-[#E5989B] text-white shadow-xl shadow-[#E5989B]/20">
-              <p className="text-sm font-medium text-white/90">Valor Total em Estoque</p>
-              <p className="text-2xl font-bold mt-1 tracking-tight">
-                R$ {totalEstoque.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-xs text-white/80 mt-1">{produtosFiltrados.length} produto{produtosFiltrados.length !== 1 ? "s" : ""}</p>
-            </div>
-          ) : activeTab === "materiais" ? (
-            <div className="p-6 rounded-3xl bg-[#E5989B] text-white shadow-xl shadow-[#E5989B]/20">
-              <p className="text-sm font-medium text-white/90">Materiais Cadastrados</p>
-              <p className="text-2xl font-bold mt-1 tracking-tight">
-                {materiaisFiltrados.length} Itens
-              </p>
-              <p className="text-xs text-white/80 mt-1">Controle de insumos e custos</p>
-            </div>
-          ) : (
-            <div className="p-6 rounded-3xl bg-white border border-[#F0E6E6] text-[#2D2D2D] shadow-lg">
-              <p className="text-sm font-medium text-[#6D6D6D]">Gestão de Custos</p>
-              <p className="text-2xl font-bold mt-1 tracking-tight">Configurações Fixas</p>
-              <p className="text-xs text-[#9E9E9E] mt-1">Defina seus custos e impostos</p>
-            </div>
-          )}
+      <main className="mx-auto max-w-5xl px-4 pt-7 sm:px-7 sm:pt-9">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">Precificação</h1>
+            <p className="mt-2 text-sm text-[#695850]">Gerencie produtos, materiais e custos do ateliê.</p>
+          </div>
+          {!costTab && <button onClick={addItem} className="site-button site-primary">
+            <Plus size={19} aria-hidden /> {materialTab ? "Novo material" : "Novo produto"}
+          </button>}
         </div>
 
-        <div className="sticky top-20 z-[90] bg-[#FAF7F2] py-2">
-          <TopTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="mt-6">
+          <TopTabs activeTab={activeTab} onTabChange={changeTab} />
         </div>
 
-        <div className="px-4">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
+        {costTab ? <CustosTab {...costSettings} /> : (
+          <section aria-label={materialTab ? "Materiais cadastrados" : "Produtos cadastrados"}>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#ead9d8] bg-[#f6e7e7] p-4 sm:p-5">
+              <div>
+                <p className="text-sm text-[#6b4352]">{materialTab ? "Materiais cadastrados" : "Valor dos produtos listados"}</p>
+                <p className="mt-1 text-2xl font-bold text-[#793751]">
+                  {loading ? "—" : materialTab ? count : formatCurrency(productsFound.reduce((sum, item) => sum + currentPrice(item), 0))}
+                </p>
+              </div>
+              <label className="relative w-full sm:w-64">
+                <span className="sr-only">{materialTab ? "Pesquisar materiais" : "Pesquisar produtos"}</span>
+                <Search size={17} aria-hidden className="pointer-events-none absolute left-3 top-3.5 text-[#695850]" />
+                <input type="search" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={materialTab ? "Pesquisar materiais" : "Pesquisar produtos"}
+                  className="h-11 w-full rounded-xl border border-[#e9dcd4] bg-white pl-9 pr-3 text-sm" />
+              </label>
             </div>
-          ) : activeTab === "produtos" ? (
-            <div className="grid grid-cols-1 gap-3">
-              {produtosFiltrados.length === 0 ? (
-                <div className="py-16 text-center text-[#9E9E9E]">
-                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mx-auto mb-4">
-                    {searchQuery ? <Search size={32} /> : <Package size={32} />}
-                  </div>
-                  <p className="text-sm font-medium">{searchQuery ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}</p>
-                  {!searchQuery && <p className="text-xs text-[#9E9E9E] mt-1">Toque no + para criar</p>}
-                </div>
-              ) : (
-                produtosFiltrados.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/precificacao/novo?id=${p.id}`}
-                    className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] hover:border-[#E5989B]/30 transition-all active:scale-[0.99] shadow-sm relative overflow-hidden"
-                  >
-                    <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-                      {p.imagem_url ? (
-                        <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
-                      ) : (
-                        <Package size={24} className="text-[#E5989B]" />
-                      )}
+
+            {error && <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e8bdc9] bg-[#fff5f7] p-4 text-sm text-[#883349]">
+              <span>{error}</span>
+              <button onClick={() => setRetry(value => value + 1)} className="site-button site-secondary">Tentar novamente</button>
+            </div>}
+
+            {loading ? <p role="status" className="py-12 text-center text-sm text-[#695850]">Carregando…</p>
+              : count === 0 && !error ? (
+              <div className="rounded-2xl border border-dashed border-[#ded0c8] bg-[#fffdf9] px-5 py-12 text-center">
+                <Package size={30} className="mx-auto text-[#793751]" aria-hidden />
+                <p className="mt-3 font-semibold">{search ? "Nenhum resultado encontrado" : materialTab ? "Nenhum material cadastrado" : "Nenhum produto cadastrado"}</p>
+                {!search && <button className="site-button site-secondary mt-4" onClick={addItem}>{materialTab ? "Cadastrar material" : "Cadastrar produto"}</button>}
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {materialTab ? materialsFound.map(material => (
+                  <button key={material.id} onClick={() => setMaterialForm(material)} className="panel-item text-left">
+                    <ItemImage url={material.imagem_url} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{material.nome}</p>
+                      <p className="text-xs text-[#695850]">{material.tipo_medida}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="text-sm font-bold text-[#2D2D2D] truncate">{p.nome}</h3>
-                        {p.favorito && <Star size={12} className="text-amber-400 fill-amber-400 flex-shrink-0" />}
-                      </div>
-                      {p.descricao && <p className="text-[11px] text-[#9E9E9E] truncate">{p.descricao}</p>}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-[#E5989B]">R$ {calcPrecoAtual(p).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#E5989B] opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
-                ))
-              )}
-            </div>
-          ) : activeTab === "materiais" ? (
-            <div className="grid grid-cols-1 gap-3">
-              {materiaisFiltrados.length === 0 ? (
-                <div className="py-16 text-center text-[#9E9E9E]">
-                  <div className="w-16 h-16 rounded-full bg-[#F8EDEB] flex items-center justify-center mx-auto mb-4">
-                    {searchQuery ? <Search size={32} /> : <Plus size={32} />}
-                  </div>
-                  <p className="text-sm font-medium">{searchQuery ? "Nenhum material encontrado" : "Nenhum material cadastrado"}</p>
-                </div>
-              ) : (
-                materiaisFiltrados.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setEditingMaterial(m)}
-                    className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 border border-[#F0E6E6] text-left active:bg-[#F8EDEB] transition-colors shadow-sm"
-                  >
-                    <div className="w-16 h-16 bg-[#F8EDEB] rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {m.imagem_url ? (
-                        <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
-                      ) : (
-                        <Lock size={20} className="text-[#E5989B]" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[#2D2D2D] truncate">{m.nome}</p>
-                      <p className="text-xs text-[#6D6D6D]">{m.tipo_medida}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-sm font-bold text-[#E5989B]">
-                        R$ {(m.preco_unitario || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                      <Pencil size={14} className="text-[#9E9E9E]" />
-                    </div>
+                    <span className="shrink-0 text-sm font-bold text-[#793751]">{formatCurrency(material.preco_unitario)}</span>
+                    <Pencil size={15} className="shrink-0 text-[#695850]" aria-hidden />
                   </button>
-                ))
-              )}
-            </div>
-          ) : (
-            <CustosTab />
-          )}
-        </div>
+                )) : productsFound.map(product => (
+                  <Link key={product.id} href={`/precificacao/novo?id=${encodeURIComponent(product.id)}`} prefetch={false} className="panel-item">
+                    <ItemImage url={product.imagem_url} />
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1 text-sm font-bold">
+                        <span className="truncate">{product.nome}</span>
+                        {product.favorito && <Star size={13} fill="currentColor" className="shrink-0 text-amber-700" aria-label="Favorito" />}
+                      </p>
+                      {product.descricao && <p className="truncate text-xs text-[#695850]">{product.descricao}</p>}
+                    </div>
+                    <span className="shrink-0 text-sm font-bold text-[#793751]">{formatCurrency(currentPrice(product))}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
-      {activeTab !== "custos" && (
-        <button
-          onClick={() => activeTab === "materiais" ? setShowMaterialForm(true) : router.push("/precificacao/novo")}
-          className="fixed right-6 bottom-24 w-14 h-14 bg-[#E5989B] rounded-full flex items-center justify-center text-white shadow-xl shadow-[#E5989B]/40 active:scale-95 transition-transform z-50"
-        >
-          <Plus size={28} />
-        </button>
-      )}
-
-      {(showMaterialForm || editingMaterial) && (
-        <MaterialFormModal
-          material={editingMaterial || undefined}
-          onClose={() => { setShowMaterialForm(false); setEditingMaterial(null); }}
-          onSave={() => {
-            setShowMaterialForm(false);
-            setEditingMaterial(null);
-            fetchMaterials();
-          }}
-        />
-      )}
-
+      {materialForm && <MaterialFormModal material={materialForm === "new" ? undefined : materialForm}
+        onClose={() => setMaterialForm(null)} onDeleteSuccess={() => {
+          setMaterialForm(null);
+          setRetry(value => value + 1);
+        }} onSave={() => {
+          setMaterialForm(null);
+          setRetry(value => value + 1);
+        }} />}
       <BottomNav />
+    </div>
+  );
+}
+
+function ItemImage({ url }: { url?: string | null }) {
+  return (
+    <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f6e7e7] text-[#793751]">
+      {url ? <Image src={url} alt="" width={48} height={48} unoptimized className="h-full w-full object-cover" />
+        : <Package size={21} aria-hidden />}
     </div>
   );
 }

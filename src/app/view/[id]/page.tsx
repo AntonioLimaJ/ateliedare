@@ -1,174 +1,104 @@
-"use client";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CalendarDays, Package, UserRound } from "lucide-react";
+import { formatCurrency, formatDate, type ItemOrcamento } from "@/lib/atelie";
+import { getPublicSupabase } from "@/lib/supabase-server";
+import { getWhatsAppUrl } from "@/lib/contact";
+import { PrintBudget } from "./actions";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { Package, Calendar, User, CheckCircle2, DollarSign, Truck, Download, Share2 } from "lucide-react";
-import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase";
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Orçamento | Ateliê da Rê",
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
 
-export default function ViewOrcamento() {
-  const { id } = useParams();
-  const [orcamento, setOrcamento] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+type PublicBudget = {
+  cliente: string | null;
+  created_at: string;
+  data_entrega: string | null;
+  link_expira_em: string;
+  total: number;
+  itens: Pick<ItemOrcamento, "nome" | "quantidade" | "preco_unitario" | "total" | "notas">[];
+};
 
-  useEffect(() => {
-    if (id) fetchOrcamento();
-  }, [id]);
+export default async function ViewOrcamento({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) notFound();
 
-  const fetchOrcamento = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("orcamentos")
-        .select(`
-          *,
-          clientes (nome),
-          orcamento_itens (*)
-        `)
-        .eq("id", id)
-        .single();
+  const supabase = getPublicSupabase();
+  if (!supabase) return <PublicBudgetUnavailable id={id} />;
 
-      if (error) throw error;
-      setOrcamento(data);
-    } catch (error) {
-      console.error("Erro ao buscar orçamento:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, error } = await supabase.rpc("ateliedare_orcamento_publico", { p_token: id });
+  if (error) return <PublicBudgetUnavailable id={id} />;
+  const budget = data as PublicBudget | null;
+  if (!budget) notFound();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!orcamento) {
-    return (
-      <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-4">
-          <Package size={40} className="text-red-400" />
-        </div>
-        <h1 className="text-xl font-bold text-[#2D2D2D]">Orçamento não encontrado</h1>
-        <p className="text-sm text-[#9E9E9E] mt-2">O link pode estar expirado ou incorreto.</p>
-      </div>
-    );
-  }
-
-  const handlePrint = () => {
-    window.print();
-  };
+  const whatsapp = getWhatsAppUrl();
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] font-sans selection:bg-[#E5989B]/30 pb-12 print:bg-white print:pb-0">
-      {/* Header fixo para o cliente (escondido no print) */}
-      <header className="bg-white border-b border-[#F0E6E6] px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm print:hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#F8EDEB] flex items-center justify-center">
-            <img src="/icon.png" alt="Logo" className="w-full h-full" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-[#2D2D2D] leading-tight">Ateliê da Re</h1>
-            <p className="text-[10px] font-medium text-[#E5989B] uppercase tracking-wider">Orcamento de Pedido</p>
-          </div>
-        </div>
-        <button 
-          onClick={handlePrint}
-          className="w-10 h-10 rounded-full bg-[#E5989B] text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-        >
-          <Download size={20} />
-        </button>
-      </header>
+    <main className="min-h-svh bg-[#faf6ef] px-4 py-8 text-[#29201f] sm:py-14 print:bg-white print:p-0">
+      <article className="mx-auto max-w-2xl rounded-[2rem] border border-[#e9dcd4] bg-white p-6 sm:p-10">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e9dcd4] pb-6">
+          <Link href="/" className="flex items-center gap-3 font-semibold text-[#793751]">
+            <Image src="/icon-192.png" alt="" width={40} height={40} className="rounded-full" /> Ateliê da Rê
+          </Link>
+          <PrintBudget />
+        </header>
 
-      <main className="max-w-2xl mx-auto p-4 pt-8 space-y-6 print:pt-0">
-        {/* Card Principal */}
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[40px] p-8 shadow-xl border border-[#F0E6E6] relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#F8EDEB] rounded-bl-full -mr-16 -mt-16 opacity-50" />
-          
-          <div className="flex justify-between items-start mb-8 relative">
-            <div>
-              <span className="bg-[#F8EDEB] text-[#E5989B] text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                #{orcamento.id.slice(0, 8)}
-              </span>
-              <h2 className="text-3xl font-black text-[#2D2D2D] mt-2 tracking-tight">Orçamento</h2>
-              <p className="text-[#9E9E9E] text-sm mt-1">{new Date(orcamento.created_at).toLocaleDateString("pt-BR", { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">Total do Pedido</p>
-              <p className="text-3xl font-black text-[#E5989B]">R$ {orcamento.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-            </div>
+        <h1 className="mt-8 font-serif text-4xl tracking-tight sm:text-5xl">Seu orçamento</h1>
+        <p className="mt-2 text-sm text-[#695850]">Emitido em {formatDate(budget.created_at)}</p>
+        <dl className="my-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-[#faf6ef] p-4">
+            <dt className="flex items-center gap-2 text-sm text-[#793751]"><UserRound size={16} aria-hidden /> Cliente</dt>
+            <dd className="mt-1 break-words font-semibold">{budget.cliente || "Cliente do ateliê"}</dd>
           </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="bg-[#FAF7F2] p-5 rounded-3xl border border-[#F0E6E6]/50">
-              <div className="flex items-center gap-2 mb-2 text-[#E5989B]">
-                <User size={16} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Cliente</span>
-              </div>
-              <p className="font-bold text-[#2D2D2D]">{orcamento.clientes?.nome || orcamento.nome_cliente_manual}</p>
-            </div>
-            <div className="bg-[#FAF7F2] p-5 rounded-3xl border border-[#F0E6E6]/50">
-              <div className="flex items-center gap-2 mb-2 text-[#E5989B]">
-                <Calendar size={16} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Previsão de Entrega</span>
-              </div>
-              <p className="font-bold text-[#2D2D2D]">
-                {orcamento.data_entrega ? new Date(orcamento.data_entrega).toLocaleDateString("pt-BR") : "A combinar"}
-              </p>
-            </div>
+          <div className="rounded-2xl bg-[#faf6ef] p-4">
+            <dt className="flex items-center gap-2 text-sm text-[#793751]"><CalendarDays size={16} aria-hidden /> Previsão de entrega</dt>
+            <dd className="mt-1 font-semibold">{formatDate(budget.data_entrega)}</dd>
           </div>
+        </dl>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-[#2D2D2D] uppercase tracking-widest px-2">Itens Solicitados</h3>
-            <div className="space-y-3">
-              {orcamento.orcamento_itens?.map((item: any) => (
-                <div key={item.id} className="flex items-center gap-4 bg-white border border-[#F0E6E6] p-4 rounded-3xl group hover:border-[#E5989B]/30 transition-colors">
-                  <div className="w-12 h-12 rounded-2xl bg-[#F8EDEB] flex items-center justify-center flex-shrink-0">
-                    <Package size={24} className="text-[#E5989B]" />
+        {budget.itens.length > 0 && (
+          <section aria-labelledby="itens-orcamento">
+            <h2 className="font-serif text-2xl" id="itens-orcamento">Itens solicitados</h2>
+            <ul className="mt-3 divide-y divide-[#e9dcd4]">
+              {budget.itens.map((item, index) => (
+                <li key={index} className="flex gap-3 py-4 print:break-inside-avoid">
+                  <Package size={19} className="mt-1 shrink-0 text-[#793751]" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words font-semibold">{item.nome}</p>
+                    <p className="text-sm text-[#695850]">{item.quantidade} × {formatCurrency(item.preco_unitario)}</p>
+                    {item.notas && <p className="mt-1 break-words text-sm text-[#695850]">{item.notas}</p>}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-[#2D2D2D] text-sm truncate">{item.nome}</h4>
-                    <p className="text-xs text-[#9E9E9E]">{item.quantidade} unidade(s)</p>
-                    {item.notas && <p className="text-[11px] text-[#6D6D6D] mt-1 italic leading-relaxed">"{item.notas}"</p>}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black text-[#2D2D2D]">R$ {item.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                    <p className="text-[10px] text-[#9E9E9E]">un. R$ {item.preco_unitario.toLocaleString("pt-BR")}</p>
-                  </div>
-                </div>
+                  <p className="shrink-0 text-sm font-bold">{formatCurrency(item.total)}</p>
+                </li>
               ))}
-            </div>
-          </div>
-        </motion.section>
+            </ul>
+          </section>
+        )}
 
-        {/* Footer info */}
-        <section className="text-center space-y-4 px-6 pt-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-full text-xs font-bold border border-green-100">
-            <CheckCircle2 size={14} />
-            Este orçamento é válido por 7 dias
-          </div>
-          <p className="text-[11px] text-[#9E9E9E] leading-relaxed">
-            Obrigado por escolher o Ateliê da Re!<br/>
-            Para confirmar seu pedido, entre em contato através do nosso WhatsApp.
-          </p>
-        </section>
-      </main>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#f6e7e7] p-4">
+          <span className="font-semibold">Total do orçamento</span>
+          <strong className="text-xl text-[#793751]">{formatCurrency(budget.total)}</strong>
+        </div>
+        <p className="mt-5 text-sm text-[#695850]">Link válido até {formatDate(budget.link_expira_em)}.</p>
+        {whatsapp && <a className="site-button site-secondary mt-5 print:hidden" href={whatsapp}>Falar com o ateliê</a>}
+      </article>
+    </main>
+  );
+}
 
-      {/* Estilos para impressão */}
-      <style jsx global>{`
-        @media print {
-          body { background: white !important; }
-          .min-h-screen { min-height: auto !important; }
-          header { display: none !important; }
-          main { padding: 0 !important; max-width: 100% !important; }
-          section { box-shadow: none !important; border: 1px solid #F0E6E6 !important; border-radius: 20px !important; }
-        }
-      `}</style>
-    </div>
+function PublicBudgetUnavailable({ id }: { id: string }) {
+  return (
+    <main className="grid min-h-svh place-items-center bg-[#faf6ef] p-5 text-[#29201f]">
+      <div className="w-full max-w-md rounded-3xl border border-[#e9dcd4] bg-white p-7">
+        <h1 className="font-serif text-3xl">Orçamento indisponível</h1>
+        <p className="mt-3 text-sm text-[#695850]">Não foi possível consultar o orçamento agora. Tente novamente em instantes.</p>
+        <a href={`/view/${id}`} className="site-button site-primary mt-5">Tentar novamente</a>
+      </div>
+    </main>
   );
 }

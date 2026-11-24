@@ -11,6 +11,7 @@ create table if not exists ateliedare_private.convites (
   iv bytea not null,
   expira_em timestamptz not null
 );
+alter table ateliedare_private.convites enable row level security;
 revoke all on ateliedare_private.convites from public, anon, authenticated;
 
 create or replace function public.ateliedare_resgatar_convite(p_token text)

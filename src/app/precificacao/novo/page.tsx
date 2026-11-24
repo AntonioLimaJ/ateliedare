@@ -17,13 +17,17 @@ import {
 import { ImageUpload } from "../_components/ImageUpload";
 import { PricingTable, PriceEditModal } from "../_components/PricingTable";
 import { ProfitInputModal, ProfitSuggestionsModal } from "../_components/ProfitModals";
-import { MaterialSelectionModal, MaterialFormModal, MaterialUsageModal, Material, MaterialSelectionModalProps } from "../_components/MaterialManager";
-import { LaborModal, LaborModalProps } from "../_components/LaborModal";
+import { MaterialSelectionModal, MaterialFormModal, MaterialUsageModal, type Material } from "../_components/MaterialManager";
+import { LaborModal } from "../_components/LaborModal";
 import { EtiquetaSelectionModal, EtiquetaFormModal } from "../_components/TagManager";
-import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/lib/supabase";
-import { useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "../_components/CustosTab";
+import { AnimatePresence } from "framer-motion";
+import { getSupabase } from "@/lib/supabase";
+import { useConfiguracoes, calcularCustoHora, calcularTotalTaxPct } from "@/lib/use-configuracoes";
 import { ConfirmationModal } from "../_components/ConfirmationModal";
+import { removeAtelieImage, uploadAtelieImage } from "@/lib/atelie-storage";
+import { money, type Etiqueta } from "@/lib/atelie";
+
+type MaterialUsado = { materialId: string; nome: string; quantidade: number; unidade: string; custo: number };
 
 // Separate the content to use Suspense
 function NovoProdutoContent() {
@@ -31,6 +35,11 @@ function NovoProdutoContent() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const originalImageRef = useRef<string | null>(null);
+  const busy = useRef(false);
+  const createOperation = useRef<string | null>(null);
+  const pendingUpload = useRef<{ source: string; url: string } | null>(null);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   // State
   const [nome, setNome] = useState("");
@@ -51,10 +60,11 @@ function NovoProdutoContent() {
   const [showLaborModal, setShowLaborModal] = useState(false);
   const [showTagSelection, setShowTagSelection] = useState(false);
   const [showTagForm, setShowTagForm] = useState(false);
-  const [selectedMaterialForUsage, setSelectedMaterialForUsage] = useState<any>(null);
+  const [selectedMaterialForUsage, setSelectedMaterialForUsage] = useState<Material | null>(null);
 
   // Save & Price edit
   const [saving, setSaving] = useState(false);
+  const [processingImage, setProcessingImage] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [dependentBudgets, setDependentBudgets] = useState<string[]>([]);
@@ -62,54 +72,60 @@ function NovoProdutoContent() {
   const [showPriceEdit, setShowPriceEdit] = useState(false);
 
   // Global config (salary/taxes)
-  const { config } = useConfiguracoes();
+  const { config, loading: configLoading, configError, refetch } = useConfiguracoes();
 
   // Materials, Labor & Tags State
-  const [materiaisAtribuidos, setMateriaisAtribuidos] = useState<any[]>([]);
+  const [materiaisAtribuidos, setMateriaisAtribuidos] = useState<MaterialUsado[]>([]);
   const [tempoTrabalho, setTempoTrabalho] = useState(0); // in seconds
-  const [etiquetasSelecionadas, setEtiquetasSelecionadas] = useState<any[]>([]);
+  const [etiquetasSelecionadas, setEtiquetasSelecionadas] = useState<Etiqueta[]>([]);
 
   useEffect(() => {
     if (!editId) return;
+    const controller = new AbortController();
+    const supabase = getSupabase();
 
-    // Buscar dados básicos do produto
-    supabase.from("produtos").select("*").eq("id", editId).single().then(({ data }) => {
-      if (!data) return;
-      if (data.nome) setNome(data.nome);
-      if (data.descricao) setDescricao(data.descricao);
-      if (data.notas) setNotas(data.notas);
-      if (data.imagem_url) {
-        setImagem(data.imagem_url);
-        originalImageRef.current = data.imagem_url;
+    async function load() {
+      const [product, materials] = await Promise.all([
+        supabase.from("produtos").select("*").eq("id", editId).abortSignal(controller.signal).single(),
+        supabase.from("produto_materiais").select("material_id,nome,quantidade,unidade,custo").eq("produto_id", editId).abortSignal(controller.signal),
+      ]);
+      if (controller.signal.aborted) return;
+      if (product.error || materials.error || !product.data) {
+        setError("Não foi possível carregar o produto. Volte à lista e tente novamente.");
+        return;
       }
-      setFavorito(data.favorito || false);
-      setMargemLucro(data.margem_lucro || 0);
-      setTempoTrabalho(data.tempo_trabalho || 0);
-      if (data.rendimento > 1) {
-        setRendimentoAtivo(true);
-        setQuantidadeRendimento(data.rendimento);
-      }
-      // Restore custom price if it differs from suggested
-      if (data.preco_final && data.preco_sugerido && Math.abs(data.preco_final - data.preco_sugerido) > 0.01) {
-        setPrecoPersonalizado(data.preco_final);
-      }
-    });
 
-    // Buscar materiais do produto
-    supabase.from("produto_materiais")
-      .select("*")
-      .eq("produto_id", editId)
-      .then(({ data }) => {
-        if (data) {
-          setMateriaisAtribuidos(data.map(m => ({
-            materialId: m.material_id,
-            nome: m.nome,
-            quantidade: m.quantidade,
-            unidade: m.unidade,
-            custo: m.custo
-          })));
-        }
-      });
+      const data = product.data;
+      const tagIds: string[] = Array.isArray(data.etiquetas_ids) ? data.etiquetas_ids : [];
+      const tags = tagIds.length ? await supabase.from("etiquetas").select("id,nome").in("id", tagIds).abortSignal(controller.signal) : null;
+      if (controller.signal.aborted) return;
+      if (tags?.error) {
+        setError("Não foi possível carregar as etiquetas. Volte à lista e tente novamente.");
+        return;
+      }
+      setNome(data.nome ?? "");
+      setDescricao(data.descricao ?? "");
+      setNotas(data.notas ?? "");
+      setImagem(data.imagem_url ?? null);
+      originalImageRef.current = data.imagem_url ?? null;
+      setFavorito(Boolean(data.favorito));
+      setMargemLucro(Number(data.margem_lucro || 0));
+      setTempoTrabalho(Number(data.tempo_trabalho || 0));
+      const yieldCount = Number(data.rendimento || 1);
+      setRendimentoAtivo(yieldCount > 1);
+      setQuantidadeRendimento(yieldCount > 1 ? yieldCount : "");
+      setPrecoPersonalizado(data.preco_final != null && data.preco_sugerido != null
+        && Math.abs(Number(data.preco_final) - Number(data.preco_sugerido)) > 0.01
+        ? Number(data.preco_final) : null);
+      setMateriaisAtribuidos((materials.data ?? []).map(m => ({
+        materialId: m.material_id, nome: m.nome, quantidade: Number(m.quantidade), unidade: m.unidade, custo: Number(m.custo),
+      })));
+      setEtiquetasSelecionadas(tags?.data ?? []);
+      setLoadedId(editId);
+    }
+
+    void load();
+    return () => controller.abort();
   }, [editId]);
 
   // Calculations (using global config)
@@ -137,169 +153,95 @@ function NovoProdutoContent() {
   };
 
   const handleDelete = async () => {
-    if (!editId) return;
-
+    if (!editId || busy.current) return;
+    busy.current = true;
+    setSaving(true);
+    setError("");
     try {
-      setSaving(true);
-
-      // 1. Verificar se o produto está em algum orçamento e buscar os dados do orçamento
-      const { data: deps, error: checkError } = await supabase
-        .from("orcamento_itens")
-        .select(`
-          orcamentos (
-            id,
-            nome_cliente_manual,
-            clientes (nome)
-          )
-        `)
-        .eq("produto_id", editId);
-
+      const { data, error: checkError } = await getSupabase()
+        .from("orcamento_itens").select("orcamento_id").eq("produto_id", editId).limit(1);
       if (checkError) throw checkError;
-
-      if (deps && deps.length > 0) {
-        // Mapear os nomes dos clientes ou IDs dos orçamentos
-        const budgetNames = deps.map(d => {
-          const orc = d.orcamentos as any;
-          return orc.clientes?.nome || orc.nome_cliente_manual || `Orçamento #${orc.id.slice(0, 8)}`;
-        });
-        // Remover duplicatas
-        setDependentBudgets(Array.from(new Set(budgetNames)));
-        setShowDeleteModal(true);
-        return;
-      }
-
+      setDependentBudgets(data?.length ? ["Há um orçamento vinculado a este produto."] : []);
       setShowDeleteModal(true);
-    } catch (error: any) {
-      console.error("Error preparing delete:", error);
+    } catch {
+      setError("Não foi possível verificar os orçamentos vinculados.");
     } finally {
+      busy.current = false;
       setSaving(false);
     }
   };
 
   const confirmDelete = async () => {
-    if (!editId) return;
+    if (!editId || busy.current || dependentBudgets.length > 0) return;
+    busy.current = true;
+    setSaving(true);
+    setError("");
     try {
-      setSaving(true);
-
-      // Deletar materiais associados
-      await supabase.from("produto_materiais").delete().eq("produto_id", editId);
-
-      // Deletar o produto
-      const { error: deleteError } = await supabase.from("produtos").delete().eq("id", editId);
+      const { error: deleteError } = await getSupabase().rpc("ateliedare_excluir_produto", { p_id: String(editId) });
       if (deleteError) throw deleteError;
-
-      // Limpar imagem do storage
-      if (originalImageRef.current) {
-        const BUCKET = "precificacao";
-        const filePath = originalImageRef.current.split(`/${BUCKET}/`)[1];
-        if (filePath) {
-          await supabase.storage.from(BUCKET).remove([filePath]);
-        }
-      }
-
-      router.push("/precificacao");
-    } catch (error: any) {
-      alert(`Erro ao deletar: ${error.message || "Tente novamente"}`);
+      await removeAtelieImage(originalImageRef.current);
+      router.replace("/precificacao");
+    } catch {
+      setError("Não foi possível excluir o produto. Confira se ele está em algum orçamento e tente novamente.");
     } finally {
+      busy.current = false;
       setSaving(false);
       setShowDeleteModal(false);
     }
   };
 
-
-  const uploadImage = async (base64: string): Promise<string> => {
-    const BUCKET = "precificacao";
-    const [meta, data] = base64.split(",");
-    const mime = meta.match(/:(.*?);/)?.[1] || "image/webp";
-    const bstr = atob(data);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
-    const blob = new Blob([u8arr], { type: mime });
-
-    const extension = mime.split("/")[1] || "webp";
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
-    const filePath = `uploads/${fileName}`;
-
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, {
-      contentType: mime,
-      cacheControl: '3600',
-      upsert: false
-    });
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-    return publicUrl;
-  };
-
   const handleSave = async () => {
-    if (saving) return;
-    if (!nome.trim()) {
-      alert("Preencha o nome do produto antes de salvar.");
+    if (busy.current || processingImage || configLoading || configError || (editId && loadedId !== editId)) return;
+    if (!nome.trim() || !Number.isFinite(precoFinal) || precoFinal < 0
+      || (rendimentoAtivo && (!Number.isSafeInteger(quantidadeRendimento) || Number(quantidadeRendimento) < 2))) {
+      setError("Informe um nome, um preço válido e, se aplicável, um rendimento de pelo menos 2 unidades.");
       return;
     }
+
+    busy.current = true;
+    setSaving(true);
+    setError("");
+    let finalImage = imagem;
+    let uploadedImage: string | null = null;
     try {
-      setSaving(true);
-
-      let finalImageUrl = imagem;
       if (imagemNova && imagem?.startsWith("data:")) {
-        finalImageUrl = await uploadImage(imagem);
+        const pending = pendingUpload.current;
+        uploadedImage = pending?.source === imagem ? pending.url : await uploadAtelieImage(imagem);
+        pendingUpload.current = { source: imagem, url: uploadedImage };
+        finalImage = uploadedImage;
       }
 
-      const payload = {
-        nome: nome.trim(),
-        descricao: descricao.trim() || null,
-        notas: notas.trim() || null,
-        imagem_url: finalImageUrl,
-        favorito,
-        preco_final: precoFinal,
-        preco_sugerido: suggestedPrice,
-        margem_lucro: margemLucro,
-        tempo_trabalho: tempoTrabalho,
-        custo_materiais: materialsCost,
-        custo_trabalho: laborValue,
-        rendimento: rendimentoAtivo ? Number(quantidadeRendimento || 1) : 1,
-      };
+      if (!editId) createOperation.current ??= crypto.randomUUID();
 
-      let savedId = editId;
-      if (editId) {
-        const { error } = await supabase.from("produtos").update(payload).eq("id", editId);
-        if (error) throw error;
-
-        // Cleanup old image from storage if changed
-        if (originalImageRef.current && originalImageRef.current !== finalImageUrl) {
-          const BUCKET = "precificacao";
-          if (originalImageRef.current.includes(BUCKET)) {
-            const path = originalImageRef.current.split(`/${BUCKET}/`)[1];
-            if (path) await supabase.storage.from(BUCKET).remove([path]);
-          }
+      const { error: saveError } = await getSupabase().rpc("ateliedare_salvar_produto", {
+        p_id: editId,
+        p_operacao: editId ? null : createOperation.current,
+        p_produto: {
+          nome: nome.trim(), descricao: descricao.trim() || null, notas: notas.trim() || null,
+          imagem_url: finalImage, favorito, preco_final: money(precoFinal),
+          preco_sugerido: money(suggestedPrice), margem_lucro: margemLucro, tempo_trabalho: tempoTrabalho,
+          custo_materiais: materialsCost, custo_trabalho: laborValue,
+          rendimento: rendimentoAtivo ? Number(quantidadeRendimento) : 1,
+          etiquetas_ids: etiquetasSelecionadas.map(tag => tag.id),
+        },
+        p_materiais: materiaisAtribuidos.map(m => ({
+          material_id: m.materialId, nome: m.nome, quantidade: m.quantidade, unidade: m.unidade, custo: m.custo,
+        })),
+      });
+      if (saveError) {
+        // Remover o upload apenas quando o banco confirmou que a operação falhou.
+        if (saveError.code && !saveError.code.startsWith("08")) {
+          pendingUpload.current = null;
+          await removeAtelieImage(uploadedImage);
         }
-      } else {
-        const { data, error } = await supabase.from("produtos").insert([payload]).select().single();
-        if (error) throw error;
-        savedId = data?.id;
+        throw saveError;
       }
-
-      // Salvar materiais associados
-      if (savedId && materiaisAtribuidos.length > 0) {
-        if (editId) await supabase.from("produto_materiais").delete().eq("produto_id", editId);
-        await supabase.from("produto_materiais").insert(
-          materiaisAtribuidos.map((m) => ({
-            produto_id: savedId,
-            material_id: m.materialId,
-            nome: m.nome,
-            quantidade: m.quantidade,
-            unidade: m.unidade,
-            custo: m.custo,
-          }))
-        );
-      }
-
-      router.push("/precificacao");
-    } catch (error: any) {
-      console.error("Erro ao salvar produto:", error.message);
-      alert(`Erro ao salvar: ${error.message || "Verifique sua conexão"}`);
+      if (originalImageRef.current !== finalImage) await removeAtelieImage(originalImageRef.current);
+      router.replace("/precificacao");
+    } catch {
+      setError("Não foi possível salvar o produto. Seus dados continuam no formulário. Tente novamente.");
     } finally {
+      busy.current = false;
       setSaving(false);
     }
   };
@@ -307,22 +249,26 @@ function NovoProdutoContent() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#2D2D2D] pb-32 font-sans selection:bg-[#E5989B]/30">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
+      <header className="sticky top-0 z-50 bg-[#793751] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-4">
-          <button onClick={handleCancel} className="p-2 -ml-2">
+          <button onClick={handleCancel} aria-label="Voltar" className="p-2 -ml-2">
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-xl font-bold tracking-tight">{editId ? "Editar Produto" : "Novo Produto"}</h1>
         </div>
-        <button onClick={handleSave} disabled={saving} className="p-2 -mr-2">
+        <button onClick={handleSave} aria-label="Salvar produto" disabled={saving || processingImage || configLoading || Boolean(configError) || Boolean(editId && loadedId !== editId)} className="p-2 -mr-2">
           {saving ? <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Check size={24} />}
         </button>
       </header>
 
-      <main className="max-w-md mx-auto p-4 space-y-6 mt-4">
+      <main className="max-w-2xl mx-auto p-4 space-y-6 mt-4">
+        {configError && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{configError} <button onClick={refetch} className="underline">Tentar novamente</button></p>}
+        {error && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-800">{error}</p>}
+        {editId && loadedId !== editId && !error && <p role="status" className="p-4 text-sm">Carregando produto…</p>}
         {/* Image Section */}
         <section className="bg-white rounded-[32px] p-6 shadow-xl border border-[#F0E6E6]">
           <ImageUpload
+            onProcessingChange={setProcessingImage}
             onImageChange={(img, isNew) => {
               setImagem(img);
               setImagemNova(isNew || false);
@@ -346,7 +292,7 @@ function NovoProdutoContent() {
                 autoCapitalize="off"
                 spellCheck={false}
                 onChange={(e) => setNome(e.target.value)}
-                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#695850] font-medium"
               />
             </div>
 
@@ -356,9 +302,9 @@ function NovoProdutoContent() {
                 placeholder="Descrição"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#695850] font-medium"
               />
-              <HelpCircle size={20} className="text-[#9E9E9E]" />
+              <HelpCircle size={20} className="text-[#695850]" />
             </div>
 
             <div className="bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 flex items-center justify-between">
@@ -367,16 +313,16 @@ function NovoProdutoContent() {
                 placeholder="Notas Pessoais"
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
-                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
+                className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#695850] font-medium"
               />
-              <HelpCircle size={20} className="text-[#9E9E9E]" />
+              <HelpCircle size={20} className="text-[#695850]" />
             </div>
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-sm font-medium text-[#2D2D2D]">Marcar como Favorito?</span>
               <button
                 onClick={() => setFavorito(!favorito)}
-                className={`w-14 h-7 rounded-full transition-all relative ${favorito ? "bg-[#E5989B]" : "bg-[#F0E6E6]"}`}
+                className={`w-14 h-7 rounded-full transition-all relative ${favorito ? "bg-[#793751]" : "bg-[#F0E6E6]"}`}
               >
                 <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${favorito ? "left-8" : "left-1 shadow-sm"}`} />
               </button>
@@ -393,7 +339,7 @@ function NovoProdutoContent() {
             className="absolute inset-0 bg-white/95 z-50 flex items-center justify-center text-center p-6 transition-opacity duration-300"
             style={{ opacity: nome.trim().length > 0 ? 0 : 1, pointerEvents: nome.trim().length > 0 ? "none" : "none" }}
           >
-            <p className="text-sm font-bold text-[#9E9E9E] uppercase tracking-widest">
+            <p className="text-sm font-bold text-[#695850] uppercase tracking-widest">
               Preencha o nome do produto
             </p>
           </div>
@@ -406,10 +352,10 @@ function NovoProdutoContent() {
                 className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors touch-manipulation"
               >
                 <div className="flex items-center gap-4">
-                  <LayoutGrid size={20} className="text-[#E5989B]" />
+                  <LayoutGrid size={20} className="text-[#793751]" />
                   <span className="text-[#2D2D2D] font-medium">Adicionar materiais</span>
                 </div>
-                <ChevronRight size={20} className="text-[#E5989B]" />
+                <ChevronRight size={20} className="text-[#793751]" />
               </button>
 
               {materiaisAtribuidos.length > 0 && (
@@ -441,18 +387,18 @@ function NovoProdutoContent() {
                 className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <Briefcase size={20} className="text-[#E5989B]" />
+                  <Briefcase size={20} className="text-[#793751]" />
                   <span className="text-[#2D2D2D] font-medium">Adicionar trabalho</span>
                 </div>
-                <ChevronRight size={20} className="text-[#E5989B]" />
+                <ChevronRight size={20} className="text-[#793751]" />
               </button>
               {tempoTrabalho > 0 && (
                 <div className="px-6 py-1 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#E5989B]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#793751]" />
                     <span className="text-xs text-[#6D6D6D] font-medium">Tempo: <span className="text-[#2D2D2D] font-bold">{formatTime(tempoTrabalho)}</span></span>
                   </div>
-                  <span className="text-xs font-bold text-[#E5989B]">R$ {laborValue.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-[#793751]">R$ {laborValue.toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -463,15 +409,15 @@ function NovoProdutoContent() {
                 className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <DollarSign size={20} className="text-[#E5989B]" />
+                  <DollarSign size={20} className="text-[#793751]" />
                   <span className="text-[#2D2D2D] font-medium">Adicionar lucro</span>
                 </div>
-                <ChevronRight size={20} className="text-[#E5989B]" />
+                <ChevronRight size={20} className="text-[#793751]" />
               </button>
               {margemLucro > 0 && (
                 <div className="px-6 py-1 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#E5989B]" />
-                  <span className="text-xs text-[#6D6D6D] font-medium">Lucro definido em <span className="text-[#E5989B] font-bold">{margemLucro}%</span></span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#793751]" />
+                  <span className="text-xs text-[#6D6D6D] font-medium">Lucro definido em <span className="text-[#793751] font-bold">{margemLucro}%</span></span>
                 </div>
               )}
             </div>
@@ -482,19 +428,19 @@ function NovoProdutoContent() {
                 className="w-full flex items-center justify-between bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5 group active:bg-[#F8EDEB] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <Square size={20} className="text-[#E5989B]" />
+                  <Square size={20} className="text-[#793751]" />
                   <span className="text-[#2D2D2D] font-medium">Selecionar Etiquetas</span>
                 </div>
-                <ChevronRight size={20} className="text-[#E5989B]" />
+                <ChevronRight size={20} className="text-[#793751]" />
               </button>
               {etiquetasSelecionadas.length > 0 && (
                 <div className="px-6 py-1 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
                   {etiquetasSelecionadas.map((tag, i) => (
                     <div key={i} className="flex items-center gap-2 bg-[#F8EDEB] border border-[#F0E6E6] px-3 py-1 rounded-full">
-                      <span className="text-[11px] font-bold text-[#E5989B]">{tag.nome}</span>
+                      <span className="text-[11px] font-bold text-[#793751]">{tag.nome}</span>
                       <button
                         onClick={() => setEtiquetasSelecionadas(etiquetasSelecionadas.filter((_, idx) => idx !== i))}
-                        className="text-[#E5989B]/50 hover:text-[#E5989B] transition-colors"
+                        className="text-[#793751]/50 hover:text-[#793751] transition-colors"
                       >
                         <X size={12} />
                       </button>
@@ -511,16 +457,18 @@ function NovoProdutoContent() {
         <section className="bg-white rounded-[32px] p-6 space-y-8 shadow-xl border border-[#F0E6E6]">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-[#2D2D2D]">Rendimento</h2>
-            <button className="text-[#9E9E9E]">
-              <HelpCircle size={24} />
-            </button>
+            <span title="Divida o preço total pela quantidade produzida." aria-label="Divida o preço total pela quantidade produzida.">
+              <HelpCircle size={22} aria-hidden />
+            </span>
           </div>
 
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-[#2D2D2D]">Rende mais de uma unidade?</span>
             <button
+              aria-label="Rendimento de várias unidades"
+              aria-pressed={rendimentoAtivo}
               onClick={() => setRendimentoAtivo(!rendimentoAtivo)}
-              className={`w-14 h-7 rounded-full transition-all relative ${rendimentoAtivo ? "bg-[#E5989B]" : "bg-[#F0E6E6]"}`}
+              className={`w-14 h-7 rounded-full transition-all relative ${rendimentoAtivo ? "bg-[#793751]" : "bg-[#F0E6E6]"}`}
             >
               <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${rendimentoAtivo ? "left-8" : "left-1 shadow-sm"}`} />
             </button>
@@ -531,16 +479,19 @@ function NovoProdutoContent() {
               <div className="bg-transparent border border-[#F0E6E6] rounded-2xl px-6 py-5">
                 <input
                   type="number"
-                  placeholder="0"
+                  placeholder="2"
+                  min={2}
+                  step={1}
+                  aria-label="Quantidade produzida"
                   value={quantidadeRendimento}
                   onChange={(e) => setQuantidadeRendimento(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#9E9E9E] font-medium"
+                  className="w-full bg-transparent outline-none text-[#2D2D2D] placeholder-[#695850] font-medium"
                 />
               </div>
 
               <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-[#F0E6E6] shadow-inner space-y-1">
                 <p className="text-xs font-bold text-[#6D6D6D]">Preço unitário</p>
-                <p className="text-2xl font-bold text-[#E5989B]">R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-[#793751]">R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           )}
@@ -566,14 +517,14 @@ function NovoProdutoContent() {
         <div className="space-y-3 pt-6">
           <button
             onClick={handleSave}
-            disabled={saving}
-            className={`w-full py-5 bg-[#E5989B] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-60" : "hover:bg-[#D4A5A5] active:scale-[0.98]"}`}
+            disabled={saving || processingImage || configLoading || Boolean(configError) || Boolean(editId && loadedId !== editId)}
+            className={`w-full py-5 bg-[#793751] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-60" : "hover:bg-[#632942] active:scale-[0.98]"}`}
           >
             {saving ? "Salvando..." : "Salvar produto"}
           </button>
           <button
             onClick={handleCancel}
-            disabled={saving}
+            disabled={saving || processingImage || configLoading || Boolean(configError) || Boolean(editId && loadedId !== editId)}
             className="w-full py-5 border border-[#F0E6E6] hover:bg-[#F8EDEB] text-[#2D2D2D] font-bold rounded-[20px] transition-colors"
           >
             Cancelar
@@ -581,7 +532,7 @@ function NovoProdutoContent() {
           {editId && (
             <button
               onClick={handleDelete}
-              disabled={saving}
+              disabled={saving || processingImage || configLoading || Boolean(configError) || Boolean(editId && loadedId !== editId)}
               className="w-full py-5 border border-[#F0E6E6] hover:bg-red-50 text-red-400 font-bold rounded-[20px] transition-colors"
             >
               Deletar produto
@@ -596,7 +547,7 @@ function NovoProdutoContent() {
           onClose={() => setShowCancelModal(false)}
           onConfirm={() => {
             setShowCancelModal(false);
-            router.back();
+            router.push("/precificacao");
           }}
           title="Cancelar Alterações"
           message="Tem certeza que deseja sair? Todas as informações não salvas serão perdidas permanentemente."

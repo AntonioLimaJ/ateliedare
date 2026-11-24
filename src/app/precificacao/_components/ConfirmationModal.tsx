@@ -1,7 +1,8 @@
 "use client";
 
+import { useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Trash2, X, AlertCircle, Info } from "lucide-react";
+import { AlertTriangle, Trash2, AlertCircle, Info } from "lucide-react";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -29,12 +30,17 @@ export function ConfirmationModal({
   isLoading = false
 }: ConfirmationModalProps) {
   const isBlocking = items.length > 0;
+  const titleId = useId();
 
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <motion.div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            onKeyDown={event => { if (event.key === "Escape" && !isLoading) onClose(); }}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -54,7 +60,7 @@ export function ConfirmationModal({
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-[#2D2D2D]">{title}</h2>
+                <h2 id={titleId} className="text-xl font-bold text-[#2D2D2D]">{title}</h2>
                 <p className="text-sm text-[#6D6D6D] leading-relaxed">
                   {message}
                 </p>
@@ -62,11 +68,11 @@ export function ConfirmationModal({
 
               {items.length > 0 && (
                 <div className="bg-[#FAF7F2] rounded-2xl p-4 text-left border border-[#F0E6E6] max-h-40 overflow-y-auto">
-                  <p className="text-[10px] font-black text-[#9E9E9E] uppercase tracking-widest mb-2">Itens Relacionados:</p>
+                  <p className="text-[10px] font-black text-[#695850] uppercase tracking-widest mb-2">Itens Relacionados:</p>
                   <ul className="space-y-1">
                     {items.map((item, i) => (
                       <li key={i} className="text-xs font-bold text-[#2D2D2D] flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-[#E5989B]" />
+                        <div className="w-1 h-1 rounded-full bg-[#793751]" />
                         {item}
                       </li>
                     ))}
@@ -79,6 +85,7 @@ export function ConfirmationModal({
               {isBlocking ? (
                 <button
                   onClick={onClose}
+                  autoFocus
                   className="w-full py-4 bg-[#2D2D2D] text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform"
                 >
                   Entendi
@@ -87,6 +94,7 @@ export function ConfirmationModal({
                 <>
                   <button
                     onClick={onClose}
+                  autoFocus
                     disabled={isLoading}
                     className="flex-1 py-4 border border-[#F0E6E6] text-[#6D6D6D] font-bold rounded-2xl active:bg-white transition-colors disabled:opacity-50"
                   >
@@ -98,7 +106,7 @@ export function ConfirmationModal({
                     className={`flex-[1.5] py-4 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
                       variant === "danger" ? 'bg-red-500 shadow-red-500/20' :
                       variant === "warning" ? 'bg-amber-500 shadow-amber-500/20' :
-                      'bg-[#E5989B] shadow-[#E5989B]/20'
+                      'bg-[#793751] shadow-[#E5989B]/20'
                     }`}
                   >
                     {isLoading ? (

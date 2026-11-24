@@ -2,21 +2,31 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  X,
   Search,
-  Filter,
   Plus,
-  ChevronRight,
   Check,
   ChevronLeft,
   Info,
   Tag,
   Lock
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ImageUpload } from "./ImageUpload";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { ConfirmationModal } from "./ConfirmationModal";
+import Image from "next/image";
+import { searchText } from "@/lib/atelie";
+import { removeAtelieImage, uploadAtelieImage } from "@/lib/atelie-storage";
+
+const units: Record<string, string[]> = {
+  "Comprimento": ["m", "cm"], "Peso (kg)": ["kg", "g"], "Volume (l)": ["l", "ml"], "Área": ["m", "cm"], "Unidade": ["un"],
+};
+
+function inBaseUnit(quantity: number, unit: string, area: boolean) {
+  if (unit === "cm") return quantity / (area ? 10000 : 100);
+  if (unit === "g" || unit === "ml") return quantity / 1000;
+  return quantity;
+}
 
 
 export interface Material {
@@ -40,30 +50,27 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+
   useEffect(() => {
-    fetchMaterials();
-  }, []);
-
-  const fetchMaterials = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("materiais")
-        .select("*")
-        .order("nome");
-
-      if (error) throw error;
-      setMaterials(data || []);
-    } catch (error: any) {
-      console.error("Erro ao buscar materiais:", error.message || error);
-    } finally {
+    const controller = new AbortController();
+    async function load() {
+      const { data, error: loadError } = await getSupabase().from("materiais").select("*")
+        .order("nome").abortSignal(controller.signal);
+      if (controller.signal.aborted) return;
+      if (loadError) setError("Não foi possível carregar os materiais.");
+      else {
+        setMaterials(data ?? []);
+        setError("");
+      }
       setLoading(false);
     }
-  };
+    void load();
+    return () => controller.abort();
+  }, [retry]);
 
-  const filteredMaterials = materials.filter(m =>
-    m.nome.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMaterials = materials.filter(m => searchText(m.nome).includes(searchText(search)));
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#FAF7F2] flex flex-col text-[#2D2D2D]">
@@ -75,22 +82,21 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
         {/* Search Bar */}
         <div className="relative pt-6">
           <div className="bg-white border border-[#F0E6E6] rounded-2xl flex items-center px-4 py-4 focus-within:border-[#E5989B]/50 transition-colors shadow-sm">
-            <Search size={20} className="text-[#9E9E9E] mr-3" />
+            <Search size={20} className="text-[#695850] mr-3" />
             <input
               type="text"
               placeholder="Digite alguma coisa aqui..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent w-full text-[#2D2D2D] outline-none placeholder-[#9E9E9E]"
+              className="bg-transparent w-full text-[#2D2D2D] outline-none placeholder-[#695850]"
             />
-            <Filter size={20} className="text-[#9E9E9E] ml-3" />
           </div>
         </div>
 
         {/* List */}
         <div className="space-y-2">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-[#9E9E9E] space-y-4">
+          {error ? <div role="alert" className="p-4 text-sm text-red-800">{error} <button className="underline" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : loading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-[#695850] space-y-4">
               <div className="w-10 h-10 border-4 border-[#E5989B]/20 border-t-[#E5989B] rounded-full animate-spin" />
               <p className="text-sm">Carregando materiais...</p>
             </div>
@@ -103,7 +109,7 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
               >
                 <div className="w-14 h-14 bg-white border border-[#F0E6E6] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                   {m.imagem_url ? (
-                    <img src={m.imagem_url} alt={m.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                    <Image src={m.imagem_url} alt="" width={48} height={48} unoptimized className="h-full w-full object-cover" />
                   ) : (
                     <Lock size={20} className="text-[#F0E6E6]" />
                   )}
@@ -122,14 +128,14 @@ export function MaterialSelectionModal({ onClose, onSelect, onAddNew }: Material
       <footer className="p-8 flex justify-end items-center gap-8 bg-white border-t border-[#F0E6E6]">
         <button
           onClick={onAddNew}
-          className="flex items-center gap-2 text-[#E5989B] font-bold text-lg"
+          className="flex items-center gap-2 text-[#793751] font-bold text-lg"
         >
           <Plus size={20} />
           Novo
         </button>
         <button
           onClick={onClose}
-          className="text-[#E5989B] font-bold text-lg"
+          className="text-[#793751] font-bold text-lg"
         >
           Fechar
         </button>
@@ -145,54 +151,17 @@ interface MaterialUsageModalProps {
 }
 
 export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsageModalProps) {
-  const [unidade, setUnidade] = useState("");
+  const options = units[material.tipo_medida] ?? units.Unidade;
+  const [unidade, setUnidade] = useState(options[0]);
   const [quantidade, setQuantidade] = useState<number | "">("");
   const [largura, setLargura] = useState<number | "">("");
   const [comprimento, setComprimento] = useState<number | "">("");
 
-  // Options based on material.tipo_medida
-  const optionsMap: Record<string, string[]> = {
-    "Comprimento": ["m", "cm"],
-    "Peso (kg)": ["kg", "g"],
-    "Volume (l)": ["l", "ml"],
-    "Área": ["m", "cm"],
-    "Unidade": ["Unidade"]
-  };
-
-  const options = optionsMap[material.tipo_medida || "Unidade"] || ["Unidade"];
-
-  useEffect(() => {
-    if (!unidade && options.length > 0) {
-      setUnidade(options[0]);
-    }
-  }, [options, unidade]);
-
-  const calculateCost = () => {
-    const precoBase = material.preco_unitario || 0;
-
-    if (material.tipo_medida === "Área") {
-      if (!largura || !comprimento) return 0;
-      let areaM2 = 0;
-      if (unidade === "cm") {
-        areaM2 = (Number(largura) * Number(comprimento)) / 10000;
-      } else {
-        areaM2 = Number(largura) * Number(comprimento);
-      }
-      return areaM2 * precoBase;
-    }
-
-    if (!quantidade) return 0;
-    let baseQty = Number(quantidade);
-
-    // Convert to base unit price reference
-    if (unidade === "cm") baseQty = baseQty / 100;
-    if (unidade === "g") baseQty = baseQty / 1000;
-    if (unidade === "ml") baseQty = baseQty / 1000;
-
-    return baseQty * precoBase;
-  };
-
-  const custo = calculateCost();
+  const area = material.tipo_medida === "Área";
+  const validMeasure = area ? Number(largura) > 0 && Number(comprimento) > 0 : Number(quantidade) > 0;
+  const rawQuantity = area ? Number(largura) * Number(comprimento) : Number(quantidade);
+  const baseQuantity = validMeasure ? inBaseUnit(rawQuantity, unidade, area) : 0;
+  const custo = baseQuantity * Number(material.preco_unitario || 0);
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -203,10 +172,10 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
       >
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-[#F8EDEB] rounded-xl flex items-center justify-center">
-            <Tag className="text-[#E5989B]" size={24} />
+            <Tag className="text-[#793751]" size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#2D2D2D]">Quanto de "{material.nome}"?</h2>
+            <h2 className="text-xl font-bold text-[#2D2D2D]">Quanto de {material.nome}?</h2>
             <p className="text-sm text-[#6D6D6D]">Preço base: R$ {(material.preco_unitario || 0).toFixed(2)} / {material.tipo_medida === "Comprimento" ? "m" : material.tipo_medida === "Peso (kg)" ? "kg" : material.tipo_medida === "Volume (l)" ? "litro" : material.tipo_medida === "Área" ? "m²" : "un"}</p>
           </div>
         </div>
@@ -215,7 +184,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
           {material.tipo_medida === "Área" ? (
             <div className="grid grid-cols-2 gap-4">
               <div className="relative">
-                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                   Largura ({unidade})
                 </label>
                 <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -229,7 +198,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
                 </div>
               </div>
               <div className="relative">
-                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                   Comprimento ({unidade})
                 </label>
                 <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -246,7 +215,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <div className="relative">
-                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                   Quantidade
                 </label>
                 <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -261,7 +230,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
               </div>
 
               <div className="relative">
-                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                   Unidade
                 </label>
                 <select
@@ -274,7 +243,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
                   ))}
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown size={16} className="text-[#9E9E9E]" />
+                  <ChevronDown size={16} className="text-[#695850]" />
                 </div>
               </div>
             </div>
@@ -282,7 +251,7 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
           {material.tipo_medida === "Área" && (
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                 Unidade de medida
               </label>
               <select
@@ -294,42 +263,32 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
                 <option value="cm">Centímetros (cm)</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <ChevronDown size={16} className="text-[#9E9E9E]" />
+                <ChevronDown size={16} className="text-[#695850]" />
               </div>
             </div>
           )}
         </div>
 
         <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center">
-          <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">Custo para este produto</p>
-          <p className="text-3xl font-bold text-[#E5989B]">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-xs font-bold text-[#695850] uppercase tracking-widest">Custo para este produto</p>
+          <p className="text-3xl font-bold text-[#793751]">R$ {custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
         </div>
 
         <div className="space-y-3">
           <button
             onClick={() => {
-              let finalQty = Number(quantidade);
-              if (material.tipo_medida === "Área") {
-                if (unidade === "cm") {
-                  finalQty = (Number(largura) * Number(comprimento)) / 10000;
-                } else {
-                  finalQty = Number(largura) * Number(comprimento);
-                }
-              }
-              onConfirm({ 
-                materialId: material.id, 
-                nome: material.nome, 
-                quantidade: finalQty, 
-                unidade: material.tipo_medida === "Área" ? "m²" : unidade, 
-                custo 
+              onConfirm({
+                materialId: material.id, nome: material.nome,
+                quantidade: area ? baseQuantity : Number(quantidade),
+                unidade: area ? "m²" : unidade, custo,
               });
             }}
-            disabled={material.tipo_medida === "Área" ? (!largura || !comprimento) : (!quantidade || Number(quantidade) <= 0)}
-            className="w-full py-5 bg-[#E5989B] disabled:bg-[#F0E6E6] disabled:text-[#9E9E9E] text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
+            disabled={!validMeasure || !Number.isFinite(custo)}
+            className="w-full py-5 bg-[#793751] disabled:bg-[#F0E6E6] disabled:text-[#695850] text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
           >
             Adicionar ao produto
           </button>
-          <button onClick={onClose} className="w-full py-4 text-[#9E9E9E] font-bold">
+          <button onClick={onClose} className="w-full py-4 text-[#695850] font-bold">
             Cancelar
           </button>
         </div>
@@ -340,197 +299,112 @@ export function MaterialUsageModal({ material, onClose, onConfirm }: MaterialUsa
 
 interface MaterialFormModalProps {
   onClose: () => void;
-  onSave: (material: any) => void;
+  onSave: (material: Material) => void;
+  onDeleteSuccess?: () => void;
   material?: Material; // if provided = edit mode
 }
 
-export function MaterialFormModal({ onClose, onSave, material }: MaterialFormModalProps) {
+export function MaterialFormModal({ onClose, onSave, onDeleteSuccess, material }: MaterialFormModalProps) {
   const isEdit = !!material;
   const [nome, setNome] = useState(material?.nome || "");
   const [observacoes, setObservacoes] = useState(material?.observacoes || "");
   const [tipoMedida, setTipoMedida] = useState(material?.tipo_medida || "Área");
-  const [preco, setPreco] = useState<number | "">(material?.preco_unitario ?? "");
+  const originalPrice = Number(material?.preco_unitario ?? 0);
+  const [error, setError] = useState("");
+  const busy = useRef(false);
+  const [processingImage, setProcessingImage] = useState(false);
   
   // New simplified calculator states
   const [buyQty, setBuyQty] = useState<number | "">("");
   const [buyPrice, setBuyPrice] = useState<number | "">("");
   const [buyWidth, setBuyWidth] = useState<number | "">("");
   const [buyLength, setBuyLength] = useState<number | "">("");
-  const [buyUnit, setBuyUnit] = useState("");
+  const [selectedUnit, setBuyUnit] = useState("");
+  const buyUnit = selectedUnit || (units[tipoMedida] ?? units.Unidade)[0];
 
   const [imagem, setImagem] = useState<string | null>(material?.imagem_url || null);
   const [imagemNova, setImagemNova] = useState(false);
-  const originalImageRef = useRef<string | null>(material?.imagem_url || null);
   const [saving, setSaving] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [dependentItems, setDependentItems] = useState<string[]>([]);
 
-  // Update calculated price
-  useEffect(() => {
-    if (buyPrice === "" || buyPrice === 0) return;
-
-    if (tipoMedida === "Área") {
-      if (buyWidth && buyLength) {
-        let areaM2 = 0;
-        if (buyUnit === "cm") {
-          areaM2 = (Number(buyWidth) * Number(buyLength)) / 10000;
-        } else {
-          areaM2 = Number(buyWidth) * Number(buyLength);
-        }
-        if (areaM2 > 0) setPreco(Number(buyPrice) / areaM2);
-      }
-    } else {
-      if (buyQty && buyQty > 0) {
-        let baseQty = Number(buyQty);
-        if (buyUnit === "cm") baseQty = baseQty / 100;
-        if (buyUnit === "g") baseQty = baseQty / 1000;
-        if (buyUnit === "ml") baseQty = baseQty / 1000;
-        
-        setPreco(Number(buyPrice) / baseQty);
-      }
-    }
-  }, [buyPrice, buyQty, buyWidth, buyLength, buyUnit, tipoMedida]);
-
-  useEffect(() => {
-    // Set default unit when tipoMedida changes
-    const defaults: Record<string, string> = {
-      "Comprimento": "m",
-      "Peso (kg)": "kg",
-      "Volume (l)": "l",
-      "Área": "m",
-      "Unidade": "un"
-    };
-    setBuyUnit(defaults[tipoMedida] || "un");
-  }, [tipoMedida]);
-
-  const uploadImage = async (base64: string): Promise<string> => {
-    const BUCKET = "precificacao";
-    const [meta, data] = base64.split(",");
-    const mime = meta.match(/:(.*?);/)?.[1] || "image/webp";
-    const bstr = atob(data);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
-    const blob = new Blob([u8arr], { type: mime });
-
-    const extension = mime.split("/")[1] || "webp";
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
-    const filePath = `uploads/${fileName}`;
-
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath, blob, { 
-      contentType: mime,
-      cacheControl: '3600',
-      upsert: false
-    });
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-    return publicUrl;
-  };
+  const area = tipoMedida === "Área";
+  const quantity = area ? Number(buyWidth) * Number(buyLength) : Number(buyQty);
+  const hasNewMeasure = buyPrice !== "" || buyQty !== "" || buyWidth !== "" || buyLength !== "";
+  const validMeasure = (area ? Number(buyWidth) > 0 && Number(buyLength) > 0 : quantity > 0)
+    && buyPrice !== "" && Number(buyPrice) >= 0;
+  const preco = validMeasure ? Number(buyPrice) / inBaseUnit(quantity, buyUnit, area) : originalPrice;
 
   const handleSave = async () => {
-    if (saving) return;
-    if (!nome) return alert("O nome do material é obrigatório.");
+    if (busy.current || processingImage) return;
+    if (!nome.trim() || !Number.isFinite(preco) || (hasNewMeasure && !validMeasure)) {
+      setError("Informe o nome do material e preencha as medidas e o preço de compra.");
+      return;
+    }
 
+    busy.current = true;
+    setSaving(true);
+    setError("");
+    let uploaded: string | null = null;
     try {
-      setSaving(true);
-
-      let finalImageUrl = imagem;
-      if (imagemNova && imagem?.startsWith("data:")) {
-        finalImageUrl = await uploadImage(imagem);
-      }
-
+      if (imagemNova && imagem?.startsWith("data:")) uploaded = await uploadAtelieImage(imagem);
+      const finalImage = uploaded || imagem;
       const payload = {
-        nome,
-        observacoes,
-        tipo_medida: tipoMedida,
-        preco_unitario: preco === "" ? 0 : preco,
-        imagem_url: finalImageUrl
+        nome: nome.trim(), observacoes: observacoes.trim(), tipo_medida: tipoMedida,
+        preco_unitario: preco, imagem_url: finalImage,
       };
-
-      let data: any, error: any;
-      if (isEdit && material?.id) {
-        ({ data, error } = await supabase
-          .from("materiais")
-          .update(payload)
-          .eq("id", material.id)
-          .select()
-          .single());
-
-        // Cleanup old image if changed
-        if (originalImageRef.current && originalImageRef.current !== finalImageUrl) {
-          const BUCKET = "precificacao";
-          if (originalImageRef.current.includes(BUCKET)) {
-            const path = originalImageRef.current.split(`/${BUCKET}/`)[1];
-            if (path) await supabase.storage.from(BUCKET).remove([path]);
-          }
-        }
-      } else {
-        ({ data, error } = await supabase
-          .from("materiais")
-          .insert([payload])
-          .select()
-          .single());
+      const table = getSupabase().from("materiais");
+      const { data, error: saveError } = await (material?.id
+        ? table.update(payload).eq("id", material.id) : table.insert(payload)).select().single();
+      if (saveError) {
+        if (saveError.code && !saveError.code.startsWith("08")) await removeAtelieImage(uploaded);
+        throw saveError;
       }
-      if (error) throw error;
+      if (material?.imagem_url !== finalImage) await removeAtelieImage(material?.imagem_url);
       onSave(data);
-    } catch (error: any) {
-      console.error("Erro ao salvar material:", error.message || error);
-      alert(`Erro ao salvar material: ${error.message || "Verifique sua conexão"}`);
+    } catch {
+      setError("Não foi possível salvar o material. Tente novamente.");
     } finally {
+      busy.current = false;
       setSaving(false);
     }
   };
 
   const onDelete = async () => {
-    if (!material?.id) return;
-
+    if (!material?.id || busy.current) return;
+    busy.current = true;
+    setSaving(true);
+    setError("");
     try {
-      setSaving(true);
-
-      // 1. Verificar se o material está em algum produto e pegar os nomes
-      const { data: deps, error: checkError } = await supabase
-        .from("produto_materiais")
-        .select("nome")
-        .eq("material_id", material.id);
-
+      const { data: deps, error: checkError } = await getSupabase().from("produto_materiais")
+        .select("produtos(nome)").eq("material_id", material.id);
       if (checkError) throw checkError;
-
-      if (deps && deps.length > 0) {
-        setDependentItems(deps.map(d => d.nome));
-        setShowConfirmDelete(true);
-        return;
-      }
-
+      const products = (deps ?? []) as unknown as { produtos: { nome: string } | null }[];
+      setDependentItems([...new Set(products.map(row => row.produtos?.nome || "Produto vinculado"))]);
       setShowConfirmDelete(true);
-    } catch (error: any) {
-      console.error("Erro ao preparar deleção:", error.message || error);
+    } catch {
+      setError("Não foi possível verificar os produtos que usam o material.");
     } finally {
+      busy.current = false;
       setSaving(false);
     }
   };
 
   const confirmDelete = async () => {
-    if (!material?.id) return;
+    if (!material?.id || busy.current || dependentItems.length > 0) return;
+    busy.current = true;
+    setSaving(true);
+    setError("");
     try {
-      setSaving(true);
-      // Deletar o material
-      const { error: deleteError } = await supabase.from("materiais").delete().eq("id", material.id);
+      const { error: deleteError } = await getSupabase().from("materiais")
+        .delete().eq("id", material.id).select("id").single();
       if (deleteError) throw deleteError;
-
-      // Limpar imagem do storage
-      if (originalImageRef.current) {
-        const BUCKET = "precificacao";
-        const filePath = originalImageRef.current.split(`/${BUCKET}/`)[1];
-        if (filePath) {
-          await supabase.storage.from(BUCKET).remove([filePath]);
-        }
-      }
-
-      onClose();
-    } catch (error: any) {
-      alert(`Erro ao deletar material: ${error.message || "Tente novamente"}`);
+      await removeAtelieImage(material.imagem_url);
+      (onDeleteSuccess ?? onClose)();
+    } catch {
+      setError("Não foi possível excluir o material. Confira se ele está vinculado a algum produto.");
     } finally {
+      busy.current = false;
       setSaving(false);
       setShowConfirmDelete(false);
     }
@@ -538,26 +412,29 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#FAF7F2] flex flex-col overflow-y-auto">
-      <header className="sticky top-0 z-50 bg-[#E5989B] px-4 py-4 flex items-center justify-between shadow-lg text-white">
+      <header className="sticky top-0 z-50 bg-[#793751] px-4 py-4 flex items-center justify-between shadow-lg text-white">
         <div className="flex items-center gap-4">
-          <button onClick={onClose} className="p-2 -ml-2" disabled={saving}>
+          <button onClick={onClose} className="p-2 -ml-2" disabled={saving || processingImage}>
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-xl font-bold tracking-tight">{isEdit ? "Editar Material" : "Novo Material"}</h1>
         </div>
         <button
           onClick={handleSave}
+          aria-label="Salvar material"
           className={`p-2 -mr-2 ${saving ? "opacity-50 animate-pulse" : "hover:bg-black/10 rounded-full transition-colors"}`}
-          disabled={saving}
+          disabled={saving || processingImage}
         >
           {saving ? <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Check size={24} />}
         </button>
       </header>
 
-      <main className="p-4 space-y-6 pb-32">
+      <main className="mx-auto w-full max-w-2xl space-y-6 p-4 sm:p-6">
+        {error && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-800">{error}</p>}
         {/* Image Section */}
         <section className="bg-white rounded-[32px] p-6 shadow-xl border border-[#F0E6E6]">
           <ImageUpload
+            onProcessingChange={setProcessingImage}
             onImageChange={(img, isNew) => {
               setImagem(img);
               setImagemNova(isNew || false);
@@ -572,7 +449,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
           <div className="space-y-6">
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                 Nome do material
               </label>
               <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -586,7 +463,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             </div>
 
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                 Observações (opcional)
               </label>
               <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -600,12 +477,12 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             </div>
 
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                 Tipo de medida
               </label>
               <select
                 value={tipoMedida}
-                onChange={(e) => setTipoMedida(e.target.value)}
+                onChange={(e) => { setTipoMedida(e.target.value); setBuyUnit(""); setBuyQty(""); setBuyWidth(""); setBuyLength(""); }}
                 className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 w-full text-[#2D2D2D] font-medium outline-none appearance-none"
               >
                 <option value="Comprimento" className="bg-white">Comprimento</option>
@@ -615,15 +492,15 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                 <option value="Volume (l)" className="bg-white">Volume (l)</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <ChevronDown size={20} className="text-[#9E9E9E]" />
+                <ChevronDown size={20} className="text-[#695850]" />
               </div>
             </div>
 
             <div className="bg-[#F8EDEB] border border-[#F0E6E6] rounded-xl p-4 flex gap-4">
               <div className="pt-1">
-                <Info size={20} className="text-[#E5989B]" />
+                <Info size={20} className="text-[#793751]" />
               </div>
-              <p className="text-xs font-medium text-[#E5989B] leading-relaxed">
+              <p className="text-xs font-medium text-[#793751] leading-relaxed">
                 {tipoMedida === "Comprimento" ? "Medida linear em metros (m). Serve para fita, zíper, linha, etc." :
                  tipoMedida === "Área" ? "Medida de superfície em metros quadrados (m²). Serve para tecidos, mantas, etc." :
                  tipoMedida === "Peso (kg)" ? "Medida de peso em quilos (kg). Serve para enchimento, pérolas, etc." :
@@ -644,7 +521,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             {tipoMedida === "Área" ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                     Largura ({buyUnit})
                   </label>
                   <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -658,7 +535,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                   </div>
                 </div>
                 <div className="relative">
-                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                     Comprimento ({buyUnit})
                   </label>
                   <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -675,7 +552,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                     Quantidade comprada
                   </label>
                   <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4">
@@ -689,7 +566,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                   </div>
                 </div>
                 <div className="relative">
-                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                  <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                     Unidade
                   </label>
                   <select
@@ -718,7 +595,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                     {tipoMedida === "Unidade" && <option value="un">un</option>}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <ChevronDown size={16} className="text-[#9E9E9E]" />
+                    <ChevronDown size={16} className="text-[#695850]" />
                   </div>
                 </div>
               </div>
@@ -726,7 +603,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
 
             {tipoMedida === "Área" && (
               <div className="relative">
-                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+                <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                   Unidade de medida
                 </label>
                 <select
@@ -738,17 +615,17 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
                   <option value="m">Metros (m)</option>
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown size={16} className="text-[#9E9E9E]" />
+                  <ChevronDown size={16} className="text-[#695850]" />
                 </div>
               </div>
             )}
 
             <div className="relative">
-              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#9E9E9E] uppercase tracking-widest">
+              <label className="absolute -top-2.5 left-4 bg-white px-1 text-[10px] font-bold text-[#695850] uppercase tracking-widest">
                 Preço total pago
               </label>
               <div className="bg-transparent border border-[#F0E6E6] rounded-xl px-4 py-4 flex items-center">
-                <span className="text-[#9E9E9E] mr-1">R$</span>
+                <span className="text-[#695850] mr-1">R$</span>
                 <input
                   type="number"
                   value={buyPrice}
@@ -760,10 +637,10 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
             </div>
 
             <div className="bg-[#FAF7F2] rounded-2xl p-6 space-y-1 shadow-inner text-center border border-[#F0E6E6]">
-              <p className="text-xs font-bold text-[#9E9E9E] uppercase tracking-widest">
+              <p className="text-xs font-bold text-[#695850] uppercase tracking-widest">
                 Preço por {tipoMedida === "Comprimento" ? "metro" : tipoMedida === "Peso (kg)" ? "kg" : tipoMedida === "Volume (l)" ? "litro" : tipoMedida === "Área" ? "m²" : "unidade"}
               </p>
-              <p className="text-3xl font-bold text-[#E5989B]">
+              <p className="text-3xl font-bold text-[#793751]">
                 R$ {(preco || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -774,14 +651,14 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
         <div className="space-y-3 pt-6">
           <button
             onClick={handleSave}
-            disabled={saving}
-            className={`w-full py-5 bg-[#E5989B] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
+            disabled={saving || processingImage}
+            className={`w-full py-5 bg-[#793751] text-white font-bold rounded-[20px] shadow-lg transition-all ${saving ? "opacity-50" : "active:scale-[0.98]"}`}
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>
           <button
             onClick={onClose}
-            disabled={saving}
+            disabled={saving || processingImage}
             className="w-full py-5 border border-[#F0E6E6] text-[#2D2D2D] font-bold rounded-[20px] active:bg-[#F8EDEB] transition-colors"
           >
             Cancelar
@@ -789,7 +666,7 @@ export function MaterialFormModal({ onClose, onSave, material }: MaterialFormMod
           {isEdit && (
             <button
               onClick={onDelete}
-              disabled={saving}
+              disabled={saving || processingImage}
               className="w-full py-5 border border-red-200 text-red-400 font-bold rounded-[20px] active:bg-red-50 transition-colors"
             >
               Deletar

@@ -3,21 +3,20 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/precificacao',
-    name: 'Ateliê da Re - Precificação',
+    name: 'Ateliê da Rê · Precificação',
     short_name: 'PrecificaRê',
     description: 'Ferramenta profissional de precificação',
     start_url: '/precificacao',
     scope: '/precificacao',
     display: 'standalone',
-    orientation: 'portrait',
-    background_color: '#ffffff',
-    theme_color: '#ffffff',
+    background_color: '#faf6ef',
+    theme_color: '#faf6ef',
     icons: [
       {
         src: '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'maskable',
+        purpose: 'any',
       },
       {
         src: '/icon-512.png',

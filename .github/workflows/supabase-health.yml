@@ -1,0 +1,55 @@
+name: Disponibilidade do Supabase
+
+on:
+  schedule:
+    - cron: '17 3,11,19 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ateliedare-supabase-health
+  cancel-in-progress: false
+
+jobs:
+  disponibilidade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Verificar resposta do banco
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_PUBLISHABLE_KEY" ]]; then
+            echo "::error::Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no repositório."
+            exit 1
+          fi
+          if [[ ! "$SUPABASE_URL" =~ ^https://[a-z0-9]+\.supabase\.co/?$ ]]; then
+            echo "::error::Use a URL HTTPS do projeto Supabase."
+            exit 1
+          fi
+
+          args=(--silent --show-error --fail --connect-timeout 5 --max-time 12
+            --retry 2 --retry-max-time 40
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY"
+            --header "Content-Type: application/json" --data '{}')
+          if [[ "$SUPABASE_PUBLISHABLE_KEY" == eyJ* ]]; then
+            if ! node -e 'try { const jwt = process.env.SUPABASE_PUBLISHABLE_KEY.split("."); process.exit(JSON.parse(Buffer.from(jwt[1], "base64url")).role === "anon" ? 0 : 1); } catch { process.exit(1); }'; then
+              echo "::error::A chave JWT deve ter o papel anon."
+              exit 1
+            fi
+            args+=(--header "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY")
+          elif [[ "$SUPABASE_PUBLISHABLE_KEY" != sb_publishable_* ]]; then
+            echo "::error::Use uma chave publishable ou anon."
+            exit 1
+          fi
+
+          result="$(curl "${args[@]}" "${SUPABASE_URL%/}/rest/v1/rpc/ateliedare_health")"
+          if [[ "$result" != "true" ]]; then
+            echo "::error::A consulta de disponibilidade retornou uma resposta inesperada."
+            exit 1
+          fi

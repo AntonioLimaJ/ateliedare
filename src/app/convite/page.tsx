@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getServerSupabase } from "@/lib/supabase-server";
+import { getPublicSupabase, getServerSupabase } from "@/lib/supabase-server";
 import { isAtelieAdmin } from "@/lib/supabase-config";
 
 export const metadata: Metadata = {
@@ -13,16 +13,30 @@ export const metadata: Metadata = {
 const validToken = (value: unknown): value is string =>
   typeof value === "string" && /^[A-Za-z0-9_-]{24,256}$/.test(value);
 
+const validActivation = (value: unknown): value is string =>
+  typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+
 async function acceptInvite(form: FormData) {
   "use server";
 
   const tokenHash = form.get("token_hash");
+  const activation = form.get("activation");
   const supabase = await getServerSupabase();
-  if (!validToken(tokenHash) || !supabase) redirect("/convite");
+  if (!supabase) redirect("/convite");
 
-  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "invite" });
-  if (error || !data.session) redirect("/convite");
-  if (!isAtelieAdmin(data.user?.app_metadata)) {
+  let session;
+  if (validActivation(activation)) {
+    const result = await getPublicSupabase()?.rpc("ateliedare_resgatar_convite", { p_token: activation });
+    const invite = result?.data?.[0];
+    if (result?.error || typeof invite?.email !== "string" || typeof invite?.senha !== "string") redirect("/convite");
+    session = await supabase.auth.signInWithPassword({ email: invite.email, password: invite.senha });
+  } else {
+    if (!validToken(tokenHash)) redirect("/convite");
+    session = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "invite" });
+  }
+
+  if (session.error || !session.data.session) redirect("/convite");
+  if (!isAtelieAdmin(session.data.user?.app_metadata)) {
     await supabase.auth.signOut({ scope: "local" });
     redirect("/convite");
   }
@@ -31,10 +45,10 @@ async function acceptInvite(form: FormData) {
 }
 
 export default async function Convite({ searchParams }: {
-  searchParams: Promise<{ token_hash?: string | string[] }>;
+  searchParams: Promise<{ token_hash?: string | string[]; activation?: string | string[] }>;
 }) {
-  const { token_hash } = await searchParams;
-  const valid = validToken(token_hash);
+  const { token_hash, activation } = await searchParams;
+  const valid = validToken(token_hash) || validActivation(activation);
   return (
     <main className="grid min-h-svh place-items-center bg-[#faf6ef] p-5 text-[#29201f]">
       <div className="w-full max-w-md rounded-[2rem] border border-[#e9dcd4] bg-white p-7 sm:p-10">
@@ -46,7 +60,9 @@ export default async function Convite({ searchParams }: {
         </p>
         {valid ? (
           <form action={acceptInvite} className="mt-7">
-            <input type="hidden" name="token_hash" value={token_hash} />
+            {validActivation(activation)
+              ? <input type="hidden" name="activation" value={activation} />
+              : <input type="hidden" name="token_hash" value={token_hash} />}
             <button type="submit" className="site-button site-primary w-full">Aceitar convite</button>
           </form>
         ) : <Link href="/entrar" className="site-button site-secondary mt-7">Voltar ao login</Link>}

@@ -24,6 +24,8 @@ A página pública funciona sem Supabase. O painel em `/precificacao` exige uma 
 
 Para convidar uma conta nova, configure a URL de produção em **Authentication → URL Configuration** e use `{{ .SiteURL }}/convite?token_hash={{ .TokenHash }}` no link do modelo **Invite user**. Emita o convite e atribua a permissão de equipe antes de compartilhar o link. A pessoa convidada confirma o acesso e define a própria senha. Se o projeto não tiver SMTP apropriado, gere o convite com `auth.admin.generateLink` em um ambiente administrativo seguro e entregue o link individualmente por um canal autorizado.
 
+A segunda migração habilita o fluxo alternativo de ativação para um projeto restaurado com o mecanismo de convite do Auth indisponível. O link de ativação é de uso único. O banco mantém apenas o hash do código, a data de expiração e a credencial inicial cifrada. Nenhuma chave administrativa é usada pelo site.
+
 O compartilhamento parte de **Orçamentos → Copiar link**. Cada link é válido por sete dias a partir da emissão. Links antigos associados diretamente ao identificador interno devem ser substituídos por um link novo.
 
 ## Disponibilidade do Supabase
